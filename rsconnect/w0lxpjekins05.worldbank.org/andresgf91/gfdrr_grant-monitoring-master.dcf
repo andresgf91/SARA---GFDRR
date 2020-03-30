@@ -1,0 +1,13 @@
+name: gfdrr_grant-monitoring-master
+title: GFDRR_Grant-Monitoring-master
+username: andresgf91
+account: andresgf91
+server: w0lxpjekins05.worldbank.org
+hostUrl: http://w0lxpjekins05.worldbank.org:3939/__api__
+appId: 474
+bundleId: 2298
+url: http://w0lxpjekins05.worldbank.org:3939/content/474/
+when: 1584977493.84073
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: akiko_GFDRR Raw Data 2_13_2020.xlsx|Create_excel_report.R|data_import.R|Data_processing.R|Draft_Akiko.R|functions.R|FY20 PMA Expenses as of 10.7.2019.xlsx|GFDRR Dashboard - 201905.xlsx|GFDRR Dashboard - 201909.xlsx|GFDRR Dashboard - 201910.xlsx|GFDRR Dashboard grant level 10_8_19.xlsx|GFDRR Dashboard grant level 12_3_19.xlsx|GFDRR Dashboard Trustee Level 10_8_19.xlsx|GFDRR Dashoard grant level 12_2_19.xlsx|GFDRR Trustee level 12_2_19.xlsx|GFDRR_mg_unit.xls|Global_theme_recode.R|Managers - Units.xlsx|Needs_GFDRR_attention_1.csv|Plots.R|README.md|Regional Risk Report.R|Regions Summary Report.R|Remove_ui_example.R|SAP Data as of June 30_2019.xlsx|data/GFDRR Raw Data 2_13_2020.xlsx|www/SARA_logo.png|www/wb_globe_BW.png
