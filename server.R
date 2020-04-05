@@ -2718,7 +2718,7 @@ server <- shinyServer(function(input,output,session) {
                        `Months to Closing Date`,
                        required_disbursement_rate) %>%
                 arrange(-required_disbursement_rate)  %>%
-                rename("Percent Uncommitted" = percent_unaccounted,
+                rename("Percent Available" = percent_unaccounted,
                        "Required Monthly Disbursement Rate" = required_disbursement_rate))
       
       
@@ -4227,7 +4227,7 @@ server <- shinyServer(function(input,output,session) {
                            detail="this may take a minute or two",{
                              openxlsx::saveWorkbook({
                                
-                               source("Raw_data_to_excel.r")
+                               source("reports/Raw_data_to_excel.r")
                                wb
                                
                              },file,overwrite = TRUE)})

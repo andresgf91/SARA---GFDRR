@@ -144,7 +144,7 @@ legend_text <- c("Closed. These grants are under the grace period.",
                  "Medium Risk (3 - 5% / month disbursement required)",
                  "Low Risk (<  3% / month disbursement required)")
 
-sheet_header <- paste("GFDRR Active Grant List as of",date_data_udpated)
+sheet_header <- paste("GFDRR Active Grant List as of",report_data_date)
 
 
 writeData(wb,2,sheet_header,startCol = 1,startRow = 1)
