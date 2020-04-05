@@ -32,63 +32,86 @@ library(shinyjs)
 # BUILD USER INTERFACE ----------------------------------------------------
 
 ## Header ---------------
-Header <- dashboardHeaderPlus(title=
-                                #tags$a(tags$img(src='GFDRR_BW_logo.png',height='45',width='190'))
-                                
-                                
-                                tagList(
-  span(class="logo-lg",'SARA'), 
-  span(class = "logo-mini","SARA "))
+Header <- dashboardHeaderPlus(
+  title =
+    tagList(
+      span(class = "logo-lg", 'SARA'),
+      span(class = "logo-mini", "SARA ")
+    )
   ,
-                          dropdownMenuOutput("date_data_updated_message"),
-                         # disable = F,
-                          enable_rightsidebar = TRUE,
-                          rightSidebarIcon = "gears",
-  left_menu =  tagList(img(class="logo-lg",src='GFDRR_BW_logo.png',height='45',width='190'))
+  dropdownMenuOutput("date_data_updated_message"),
+  # disable = F,
+  enable_rightsidebar = TRUE,
+  rightSidebarIcon = "gears",
+  left_menu =  tagList(
+    img(
+      class = "logo-lg",
+      src = 'GFDRR_BW_logo.png',
+      height = '45',
+      width = '190'
+    )
+  )
 )
 ## Sidebar ---------------
 
     
-secretariat_view <-   menuItem("Portfolio Overview",
-                                tabName = "overview",
-                                icon = icon("dashboard"),
-                                selected = T)
-                      
+secretariat_view <-   menuItem(
+  "Portfolio Overview",
+  tabName = "overview",
+  icon = icon("dashboard"),
+  selected = T
+)
+
 info <- menuItem("Additional Information",
-                             tabName = "admin_info",
-                             icon = icon("info"))
+                 tabName = "admin_info",
+                 icon = icon("info"))
 
-parent_trust_fund_view <-   menuItem("Parent Trust Fund",
-                       tabName = "parent_tf",
-                       icon = icon("funnel-dollar"),
-                       selected = F)
+parent_trust_fund_view <-   menuItem(
+  "Parent Trust Fund",
+  tabName = "parent_tf",
+  icon = icon("funnel-dollar"),
+  selected = F
+)
 
-regions_view <-  menuItem("Grant Portfolio",
-                       tabName = "regions",
-                       icon = icon("search-plus"),selected = F)
+regions_view <-  menuItem(
+  "Grant Portfolio",
+  tabName = "regions",
+  icon = icon("search-plus"),
+  selected = F
+)
 
-TTL_grant_detail <-  menuItem("TTL/Grant Detail",
-                       menuSubItem("Grant View",
-                                   tabName = "grant_dash",
-                                   icon = icon("dashboard")),
-                       menuSubItem("TTL View",
-                                   tabName = "TTL_dashboard",
-                                   icon = icon("stream")))
+TTL_grant_detail <-  menuItem(
+  "TTL/Grant Detail",
+  menuSubItem(
+    "Grant View",
+    tabName = "grant_dash",
+    icon = icon("dashboard")
+  ),
+  menuSubItem("TTL View",
+              tabName = "TTL_dashboard",
+              icon = icon("stream"))
+)
 
-reports_tab <- menuItem("Download Reports",
-                        tabName = "reports",
-                        icon=icon("file-download"),
-                        selected = F)
+reports_tab <- menuItem(
+  "Download Reports",
+  tabName = "reports",
+  icon = icon("file-download"),
+  selected = F
+)
 
 
-Sidebar <- dashboardSidebar(#collapsed = TRUE,
-                            sidebarMenu( secretariat_view,
-                                         parent_trust_fund_view,
-                                         regions_view,
-                                        info,
-                                        reports_tab,
-                                       # TTL_grant_detail,
-                                        id = 'nav'))
+Sidebar <- dashboardSidebar(
+  #collapsed = TRUE,
+  sidebarMenu(
+    secretariat_view,
+    parent_trust_fund_view,
+    regions_view,
+    info,
+    reports_tab,
+    # TTL_grant_detail,
+    id = 'nav'
+  )
+)
 
 ## tab.1 (Overview)---------------
 tab.1 <-  tabItem(tabName = "overview",
@@ -214,187 +237,234 @@ tab.1.3 <-  tabItem(tabName = "admin_info",
                     )
 
 ## tab.2 (Parent Trustfund View) ----------------------
-tab.2 <- tabItem(tabName= "parent_tf",fluidPage(
-                 titlePanel("Parent Trust Fund View"),
-                           fluidRow(
-                   column(width=3,
-                 boxPlus(title = "", closable = F,enable_label = T,label_text = 'Parent Fund(s)',
-                     textOutput('trustee_name'),
-                     width=NULL,background = "navy")),
-                 column(width=9,
-                 boxPlus(title = "", closable = F,enable_label = T,label_text = 'Donor Agencies',
-                     textOutput('trustee_contribution_agency'),
-                     width = 6,background = 'navy'),
-                 boxPlus(title = "", closable = F,enable_label = T,label_text = 'TTL(s)',
-                     textOutput('TTL_name'),
-                     width = 6,
-                     background = "navy"))),
-                 fluidRow(
-                   column(width=3,
-                 valueBoxOutput("fund_balance", width = NULL),
-                 valueBoxOutput("trustee_closing_in_months",width = NULL),
-                 valueBoxOutput("trustee_active_grants",width = NULL),
-                 valueBoxOutput("trustee_grants_closing_3",width = NULL)
-                           ),
-                 column(width=9,
-                        boxPlus(
-                          plotlyOutput("trustee_received_unpaid_pie", height = 260),
-                          title='Parent Fund(s) Balance',
-                          background = "blue",
-                          enable_label = T,
-                          label_text = NULL,
-                          width = 6,
-                          collapsible = TRUE,
-                          closable = F),
-                        boxPlus(
-                          plotlyOutput("trustee_dis_GG", height = 260),
-                          title='Active Portfolio Disbursement Summary',
-                          background = "blue",
-                          enable_label = T,
-                          label_text = NULL,
-                          width = 6,
-                          collapsible = TRUE,
-                          closable = F),
-                        boxPlus(
-                          plotlyOutput("trustee_region_n_grants_GG", height = 260),
-                          title='Grants by Region',
-                          background = "blue",
-                          enable_label = T,
-                          label_text = NULL,
-                          width = 6,
-                          collapsible = TRUE,
-                          closable = F),
-                        boxPlus(
-                          plotlyOutput("trustee_region_GG", height = 260),
-                          title='Funding per Region',
-                          background = "blue",
-                          enable_label = T,
-                          label_text = NULL,
-                          width = 6,
-                          collapsible = TRUE,
-                          closable = F))),
-                 fluidRow(
-                   boxPlus(dataTableOutput("trustee_countries_DT"),
-                   title='Country Summary Table',
-                   background = NULL,
-                   enable_label = T,
-                   label_text = NULL,
-                   width = NULL,
-                   collapsible = TRUE,
-                   closable = F,
-                   collapsed = T)
-                 
+tab.2 <- tabItem(tabName = "parent_tf",
+                 fluidPage(
+                   titlePanel("Parent Trust Fund View"),
+                   fluidRow(column(
+                     width = 3,
+                     boxPlus(
+                       title = "",
+                       closable = F,
+                       enable_label = T,
+                       label_text = 'Parent Fund(s)',
+                       textOutput('trustee_name'),
+                       width = NULL,
+                       background = "navy"
+                     )
+                   ),
+                   column(
+                     width = 9,
+                     boxPlus(
+                       title = "",
+                       closable = F,
+                       enable_label = T,
+                       label_text = 'Donor Agencies',
+                       textOutput('trustee_contribution_agency'),
+                       width = 6,
+                       background = 'navy'
+                     ),
+                     boxPlus(
+                       title = "",
+                       closable = F,
+                       enable_label = T,
+                       label_text = 'TTL(s)',
+                       textOutput('TTL_name'),
+                       width = 6,
+                       background = "navy"
+                     )
+                   )),
+                   fluidRow(
+                     column(
+                       width = 3,
+                       valueBoxOutput("fund_balance", width = NULL),
+                       valueBoxOutput("trustee_closing_in_months", width = NULL),
+                       valueBoxOutput("trustee_active_grants", width = NULL),
+                       valueBoxOutput("trustee_grants_closing_3", width = NULL)
+                     ),
+                     column(
+                       width = 9,
+                       boxPlus(
+                         plotlyOutput("trustee_received_unpaid_pie", height = 260),
+                         title = 'Parent Fund(s) Balance',
+                         background = "blue",
+                         enable_label = T,
+                         label_text = NULL,
+                         width = 6,
+                         collapsible = TRUE,
+                         closable = F
+                       ),
+                       boxPlus(
+                         plotlyOutput("trustee_dis_GG", height = 260),
+                         title = 'Active Portfolio Disbursement Summary',
+                         background = "blue",
+                         enable_label = T,
+                         label_text = NULL,
+                         width = 6,
+                         collapsible = TRUE,
+                         closable = F
+                       ),
+                       boxPlus(
+                         plotlyOutput("trustee_region_n_grants_GG", height = 260),
+                         title = 'Grants by Region',
+                         background = "blue",
+                         enable_label = T,
+                         label_text = NULL,
+                         width = 6,
+                         collapsible = TRUE,
+                         closable = F
+                       ),
+                       boxPlus(
+                         plotlyOutput("trustee_region_GG", height = 260),
+                         title = 'Funding per Region',
+                         background = "blue",
+                         enable_label = T,
+                         label_text = NULL,
+                         width = 6,
+                         collapsible = TRUE,
+                         closable = F
+                       )
+                     )
+                   ),
+                   fluidRow(
+                     boxPlus(
+                       dataTableOutput("trustee_countries_DT"),
+                       title = 'Country Summary Table',
+                       background = NULL,
+                       enable_label = T,
+                       label_text = NULL,
+                       width = NULL,
+                       collapsible = TRUE,
+                       closable = F,
+                       collapsed = F,
+                       footer = downloadBttn('Dload_country_summary_table')
+                     )
+                     
+                   )
                  ))
-)
-                        
-                        
-                        
-                              #valueBoxOutput("trustee_received",width = NULL),
+
+
+                      #valueBoxOutput("trustee_received",width = NULL),
                              # valueBoxOutput("trustee_unpaid",width = NULL)),
-                              #infoBoxOutput("trustee_grants_amounts",width = NULL)),
   
 
 
-## tab.3 (Regions View) ---------------
+## tab.3 (Grant Portfolio View) ---------------
 
-tab.3 <-  tabItem(tabName = "regions",
-                  class = 'active',
-                    titlePanel("Grant Portfolio"),
-                    fluidRow(
-                      column(width=3,
-                             valueBoxOutput(outputId = "focal_active_grants",width = 12),
-                             valueBoxOutput(outputId = "focal_active_funds", width = 12),
-                             valueBoxOutput("low_risk", width = 6),
-                             valueBoxOutput("medium_risk", width = 6),
-                             valueBoxOutput("high_risk", width = 6),
-                             valueBoxOutput("very_high_risk", width = 6),
-                        valueBoxOutput(outputId = "focal_grants_closing_3", width = 6),
-                             valueBoxOutput(outputId = "focal_grants_active_3_zero_dis",width = 6),
-                             valueBoxOutput(outputId = "region_grants_may_need_transfer", width = 6),
-                             valueBoxOutput(outputId = "region_grants_active_no_transfer",width = 6)
-                             ),
-                      column(width=9,fluidRow(
-                        boxPlus(
-                          plotlyOutput("elpie2",
-                                       height="260px"),
-                          title='Funds Summary',
-                          background = "navy",
-                          enable_label = T,
-                          label_text = NULL,
-                          width = 6,
-                          collapsible = TRUE,
-                          closable = F,
-                          collapsed = F),
-                        boxPlus(
-                            plotlyOutput(outputId = "region_GP_GG",
-                                         height="260px"),
-                            title='Funding by GP/Global Theme',
-                            background = "navy",
-                            enable_label = T,
-                            label_text = NULL,
-                            width = 6,
-                            collapsible = TRUE,
-                            closable = F,
-                            collapsed = F),
-                            boxPlus(
-                              plotlyOutput(outputId = "disbursement_risk_GG",
-                                           height="260px"),
-                              title ='Grants Disbursement Risk',
-                              background = "blue",
-                              enable_label = T,
-                              label_text = NULL,
-                              width = 12,
-                              collapsible = TRUE,
-                              closable = F,
-                              collapsed = F),
-                            
-                        boxPlus(
-                          plotlyOutput(outputId = "focal_region_n_grants_GG",
-                                       height = "420px"),
-                          title ='Active Portfolio by Trustee',
-                          background = "light-blue",
-                          enable_label = T,
-                          label_text = NULL,
-                          width = 12,
-                          collapsible = TRUE,
-                          closable = F,
-                          collapsed = F)
-                             )),
-                            fluidRow(
-                          
-                          boxPlus(solidHeader = T,
-                            DT::dataTableOutput(outputId = "region_summary_grants_table"),
-                            title='Summary Table',
-                            background = NULL,
-                            enable_label = T,
-                            label_text = NULL,
-                            width = 12,
-                            collapsible = TRUE,
-                            closable = F,
-                            collapsed = T) ,
-                          boxPlus(solidHeader = T,
-                                  DT::dataTableOutput(outputId = "region_countries_grants_table"),
-                                  title ='Countries Summary Table',
-                                  background = NULL,
-                                  enable_label = T,
-                                  label_text = NULL,
-                                  width = 12,
-                                  collapsible = TRUE,
-                                  closable = F,
-                                  collapsed = T) ,
-                          boxPlus(solidHeader = T,
-                                  DT::dataTableOutput(outputId = "region_funding_source_grants_table"),
-                                  title='Funding source table',
-                                  background = NULL,
-                                  enable_label = T,
-                                  label_text = NULL,
-                                  width = 12,
-                                  collapsible = TRUE,
-                                  closable = F,
-                                  collapsed = T)
-                            )
-                          
-                          ))
+tab.3 <-  tabItem(
+  tabName = "regions",
+  class = 'active',
+  titlePanel("Grant Portfolio"),
+  fluidRow(
+    column(
+      width = 3,
+      valueBoxOutput(outputId = "focal_active_grants", width = 12),
+      valueBoxOutput(outputId = "focal_active_funds", width = 12),
+      valueBoxOutput("low_risk", width = 6),
+      valueBoxOutput("medium_risk", width = 6),
+      valueBoxOutput("high_risk", width = 6),
+      valueBoxOutput("very_high_risk", width = 6),
+      valueBoxOutput("grace_period_grants", width = 6),
+      valueBoxOutput(outputId = "focal_grants_closing_3", width = 6),
+      valueBoxOutput(outputId = "focal_grants_active_3_zero_dis", width = 6),
+      valueBoxOutput(outputId = "region_grants_may_need_transfer", width = 6),
+      valueBoxOutput(outputId = "region_grants_active_no_transfer", width = 6)
+    ),
+    
+    column(width = 9, fluidRow(
+      boxPlus(
+        plotlyOutput("elpie2",
+                     height = "260px"),
+        title = 'Funds Summary',
+        background = "navy",
+        enable_label = T,
+        label_text = NULL,
+        width = 6,
+        collapsible = TRUE,
+        closable = F,
+        collapsed = F
+      ),
+      boxPlus(
+        plotlyOutput(outputId = "region_GP_GG",
+                     height = "260px"),
+        title = 'Funding by GP/Global Theme',
+        background = "navy",
+        enable_label = T,
+        label_text = NULL,
+        width = 6,
+        collapsible = TRUE,
+        closable = F,
+        collapsed = F
+      ),
+      boxPlus(
+        plotlyOutput(outputId = "disbursement_risk_GG",
+                     height = "260px"),
+        title = 'Grants Disbursement Risk',
+        background = "blue",
+        enable_label = T,
+        label_text = NULL,
+        width = 12,
+        collapsible = TRUE,
+        closable = F,
+        collapsed = F
+      ),
+      
+      boxPlus(
+        plotlyOutput(outputId = "focal_region_n_grants_GG",
+                     height = "420px"),
+        title = 'Active Portfolio by Trustee',
+        background = "light-blue",
+        enable_label = T,
+        label_text = NULL,
+        width = 12,
+        collapsible = TRUE,
+        closable = F,
+        collapsed = F
+      )
+    )),
+    fluidRow(
+      boxPlus(
+        solidHeader = T,
+        DT::dataTableOutput(outputId = "region_summary_grants_table"),
+        title = 'Summary Table',
+        background = NULL,
+        enable_label = T,
+        label_text = NULL,
+        width = 12,
+        collapsible = TRUE,
+        closable = F,
+        collapsed = T,
+        footer = downloadBttn('Dload_region_summary_grants_table')
+      ) ,
+      boxPlus(
+        solidHeader = T,
+        DT::dataTableOutput(outputId = "region_countries_grants_table"),
+        title = 'Countries Summary Table',
+        background = NULL,
+        enable_label = T,
+        label_text = NULL,
+        width = 12,
+        collapsible = TRUE,
+        closable = F,
+        collapsed = T,
+        footer = downloadBttn('Dload_region_countries_grants_table')
+      ) ,
+      boxPlus(
+        solidHeader = T,
+        DT::dataTableOutput(outputId = "region_funding_source_grants_table"),
+        title = 'Funding source table',
+        background = NULL,
+        enable_label = T,
+        label_text = NULL,
+        width = 12,
+        collapsible = TRUE,
+        closable = F,
+        collapsed = T,
+        footer = downloadBttn('Dload_region_funding_source_grants_table')
+      )
+    )
+    
+  )
+)
                   
 
 ## tab.4 (PMA View) ---------------

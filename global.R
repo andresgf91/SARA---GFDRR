@@ -10,30 +10,20 @@ options(scipen = 999)
 #NEEDS UPDATING
 
 #grants_file <- "GFDRR Grant Level Dashboard Data 1_27_2020.xlsx"
-#grants_file <- "GFDRR Grant Level Raw Data Sara 2_13_20.xlsx"
-
+old_grants_file <- "data/GFDRR Grant Level Raw Data Sara 2_13_20.xlsx"
 grants_file <- "data/GFDRR Grant Level Sara Data 3_4_2020.xlsx"
 
-#trustee_file <- "GFDRR Trustee Level Raw Data Sara 2_13_2020.xlsx"
+old_trustee_file <- "data/GFDRR Trustee Level Raw Data Sara 2_13_2020.xlsx"
 trustee_file <- "data/GFDRR Trustee Level Sara Data 3_4_2020.xlsx"
 
-grants <- read_xlsx(grants_file)
-date_data_udpated <- lubridate::mdy(stri_sub(grants_file,from = -15,-6))
-
-report_data_date <- paste0(month(date_data_udpated,abbr = FALSE,label = TRUE),
-                           " ", day(date_data_udpated),
-                           ", ",
-                           year(date_data_udpated))
 
 #fp_raw_data <- read_xlsx(path = "data/GFDRR Raw Data 2_13_2020.xlsx",sheet = 2,skip = 6)
 fp_raw_data <- read_xlsx(path = "data/FP_GFDRR Raw Data 3_4_2020.xlsx",sheet = 2,skip = 6)
-
-trustee <- read_xlsx(trustee_file)
 recode_trustee <- read_xlsx('data/recodes.xlsx',sheet=1)
 recode_region <- read_xlsx('data/recodes.xlsx',sheet=2)
 recode_GT <- read_xlsx("data/Global Theme - Resp. Unit Mapping.xlsx")
 
-
+##GLOBAL FUNCTIONS ---------
 
 remove_periods_from_names <- function(df){
   names_with_dots <- sum(stri_detect_fixed(names(df),"."))
@@ -45,6 +35,34 @@ remove_periods_from_names <- function(df){
   df
 }
 
+all_fun <- function(INPUT,CHOICES){
+  if (INPUT == "ALL"){
+    
+    return(CHOICES)}
+  else{
+    
+    return(INPUT)}
+  
+}
+
+
+#Data processing -----
+
+process_data_files <- function(GRANTS_file = grants_file,TRUSTEE_file = trustee_file) {
+
+grants <- read_xlsx(GRANTS_file)
+trustee <- read_xlsx(TRUSTEE_file)
+
+
+date_data_udpated <- lubridate::mdy(stri_sub(GRANTS_file,from = -15,-6))
+
+report_data_date <- paste0(
+  month(date_data_udpated, abbr = FALSE, label = TRUE),
+  " ",
+  day(date_data_udpated),
+  ", ",
+  year(date_data_udpated)
+)
 
 
 grants <- remove_periods_from_names(grants)
@@ -59,14 +77,19 @@ if (!is.null(grants$`Lead GP/Global Theme`)){
   grants <- grants %>% dplyr::rename("Lead GP/Global Themes"=`Lead GP/Global Theme`)
 }
 
-if (!is.null(trustee$`Contribution Agreement Signed (Ledger) U...19`)){
-  trustee <- trustee%>% dplyr::rename("Net Signed Condribution in USD"=`Contribution Agreement Signed (Ledger) U...19`)
+#rename columns in trustee df if neccessary
+trustee_names <- names(trustee)
+if ("Contribution Agreement Signed (Ledger) U...19" %in% trustee_names){
+  trustee <- trustee%>% 
+    dplyr::rename("Net Signed Condribution in USD"=`Contribution Agreement Signed (Ledger) U...19`)
 }
-if (!is.null(trustee$`Contribution Cash received (ledger) USD`)){
-  trustee <- trustee %>% dplyr::rename("Net Paid-In Condribution in USD"=`Contribution Cash received (ledger) USD`)
+if ("Contribution Cash received (ledger) USD" %in% trustee_names){
+  trustee <- trustee %>%
+    dplyr::rename("Net Paid-In Condribution in USD"=`Contribution Cash received (ledger) USD`)
 }
-if (!is.null(trustee$`Contribution Agreement Signed (Ledger) U...21`)){
-  trustee <- trustee %>% dplyr::rename("Net Unpaid contribution in USD"=`Contribution Agreement Signed (Ledger) U...21`)
+if ("Contribution Agreement Signed (Ledger) U...21" %in% trustee_names){
+  trustee <- trustee %>%
+    dplyr::rename("Net Unpaid contribution in USD"=`Contribution Agreement Signed (Ledger) U...21`)
 }
 
 
@@ -91,7 +114,7 @@ grants <- full_join(grants,recode_region,by=c("Fund Country Region Name"='Region
 
 #filter out grants that have 0 or that are not considered "Active" as per GFDRR definition which includes PEND
 
-all_grants <- grants
+raw_grants <- grants
 
 grants <- grants %>% filter(`Fund Status` %in% c("ACTV","PEND"))
 
@@ -115,11 +138,15 @@ elapsed_months <- function(end_date, start_date) {
 }
 
 
-active_trustee$months_to_end_disbursement <- 
+active_trustee$months_to_end_disbursement_dynamic <- 
   elapsed_months(active_trustee$`TF End Disb Date`,today())
 
-active_trustee$months_to_end_disbursement_static <- 
-  elapsed_months(active_trustee$`TF End Disb Date`,date_data_udpated)
+active_trustee$months_to_end_disbursement_static <- as.numeric(floor(
+  (difftime(
+    strptime(active_trustee$`TF End Disb Date`, format = "%Y-%m-%d",tz = "GMT"),
+    strptime(date_data_udpated, format = "%Y-%m-%d",tz="GMT"),
+    units="days")
+  )/(365.25/12)))
 
 
 
@@ -129,12 +156,23 @@ active_trustee$`Donor Agency Name` <- ifelse(active_trustee$`Donor Agency Name`=
                                              "Multiple Donors",
                                              active_trustee$`Donor Agency Name`)
 
-grants$months_to_end_disbursement <- 
+grants$months_to_closing_dynamic <- 
   elapsed_months(grants$`Closing Date`,today())
 
-grants$months_to_end_disbursement_static <- 
-  elapsed_months(grants$`Closing Date`,date_data_udpated)
+grants$`Months to Closing Date`<- as.numeric(floor(
+  (difftime(
+    strptime(grants$`Closing Date`, format = "%Y-%m-%d",tz = "GMT"),
+    strptime(date_data_udpated, format = "%Y-%m-%d",tz="GMT"),
+    units="days")
+  )/(365.25/12)))
 
+
+grants$`Months to Closing Date` <- ifelse(grants$`Months to Closing Date`== 0,
+                                                 1,
+                                                 grants$`Months to Closing Date`)
+
+
+grants$closed_or_not <- ifelse(grants$`Closing Date`< date_data_udpated,"yes","no") 
 
 # add a column with Trustee temporary name V
 grants <- left_join(grants,active_trustee %>%
@@ -160,20 +198,17 @@ grants$closing_FY <- ifelse(month(grants$`Closing Date`) > 6,
                          year(grants$`Closing Date`) + 1,
                          year(grants$`Closing Date`))
 
-grants$remaining_balance <- grants$`Grant Amount USD` - grants$`Disbursements USD`
+grants$remaining_balance <- grants$`Grant Amount USD` - (grants$`Disbursements USD` + grants$`Commitments USD`)
 
-grants$unnacounted_amount <- grants$`Grant Amount USD` -
-  (grants$`Disbursements USD` + grants$`Commitments USD`)
+grants$unnacounted_amount <- grants$`Grant Amount USD` - (grants$`Disbursements USD` + grants$`Commitments USD`)
 
-grants$percent_unaccounted <- (grants$unnacounted_amount * 100 ) / grants$`Grant Amount USD`
+grants$percent_unaccounted <- (grants$unnacounted_amount * 100)/grants$`Grant Amount USD`
 
-grants$tf_age_months <- elapsed_months(today(),grants$`Activation Date`)
+grants$tf_age_months <- elapsed_months(date_data_udpated,grants$`Activation Date`)
 
-grants$planned_tf_duration_months <- elapsed_months(grants$`Closing Date`,
-                                                 grants$`Activation Date`)
+grants$planned_tf_duration_months <- elapsed_months(grants$`Closing Date`,grants$`Activation Date`)
 
 grants$time_ratio <- (grants$tf_age_months/grants$planned_tf_duration_months)
-
 
 grants$disbursement_rate <- ifelse(grants$`Disbursements USD`>0,
                                            (grants$`Disbursements USD`/grants$`Grant Amount USD`),
@@ -189,20 +224,25 @@ grants$burn_rate <- (grants$`Disbursements USD`/ grants$tf_age_months)
 grants$percent_remaining <- grants$remaining_balance/grants$`Grant Amount USD`
 
 grants$required_disbursement_rate <- (grants$unnacounted_amount/grants$`Grant Amount USD`)/
-  (ifelse(grants$months_to_end_disbursement!=0,grants$months_to_end_disbursement,1))
+  (ifelse(grants$`Months to Closing Date`>1,grants$`Months to Closing Date`,1))
 
 grants$required_disbursement_rate <- ifelse(grants$required_disbursement_rate==Inf,
                                       grants$percent_unaccounted/100,
                                       grants$required_disbursement_rate)
 
+grants$required_disbursement_rate <- ifelse(grants$closed_or_not == "yes",
+                                            999,
+                                            grants$required_disbursement_rate)
+
+
 compute_risk_level <- function (x){
-  
-  risk_level <- ifelse(x < .025,"Low Risk",
-                       ifelse(x < .055,"Medium Risk",
-                       ifelse(x < .105,"High Risk",
-                       "Very High Risk")))
-  
-  return(risk_level)
+risk_level <- ifelse(x == 999, "Closed (Grace Period)",
+                     ifelse(x < .025,"Low Risk",
+                            ifelse(x < .055,"Medium Risk",
+                                   ifelse(x < .105,"High Risk",
+                                          "Very High Risk"))))
+
+return(risk_level)
 }
 
 grants$disbursement_risk_level <- compute_risk_level(grants$required_disbursement_rate)
@@ -210,10 +250,11 @@ grants$disbursement_risk_level <- compute_risk_level(grants$required_disbursemen
 
 compute_risk_color<- function (x){
   
-  risk_color <- ifelse(x<.025,"green",
+  risk_color <- ifelse(x==999, "azure1",
+                       ifelse(x<.025,"green",
                        ifelse(x<.055,"yellow",
                               ifelse(x<.105,"orange",
-                                     "red")))
+                                     "red"))))
   
   return(risk_color)
 }
@@ -221,23 +262,24 @@ compute_risk_color<- function (x){
 grants$disbursement_risk_color <- compute_risk_color(grants$required_disbursement_rate) 
 
 #compute adjusted transfers (accounting for transfers out)
-grants$adjusted_transfer <- grants$`Transfer-in USD` - grants$`Transfers-out in USD`
+grants$`Real Transfers in` <- grants$`Transfer-in USD` - grants$`Transfers-out in USD`
 
 #compute percentage of what was transferred that is available
-grants$percent_transferred_available <- grants$`Available Balance USD`/grants$adjusted_transfer
+grants$percent_transferred_available <- grants$`Available Balance USD`/grants$`Real Transfers in`
 
-#percent amount that is still available to be transferred
-grants$funds_to_be_transferred <- grants$`Grant Amount USD` - grants$adjusted_transfer
+#amount that is still available to be transferred
+grants$`Not Yet Transferred` <- grants$`Grant Amount USD` - grants$`Real Transfers in`
 
 #compute percentage of total grant that still needs to be transferred
-grants$percent_left_to_transfer <- grants$funds_to_be_transferred/grants$`Grant Amount USD`
+grants$percent_left_to_transfer <- grants$`Not Yet Transferred`/grants$`Grant Amount USD`
 
 #two step process to identify PMA grants (OR JUST ONE IF YOU WANT TO KEEP JUST-IN-TIME grants in):
 
 #step 1
 grants$PMA <- ifelse(is.na(grants$`Project ID`),'yes','no')
 
-grants$PMA[grants$Fund=="TF018938"] <- 'no'
+#this is the just-in-time grant that need to be 
+grants$PMA[grants$Fund=="TF018938"] <- 'no' 
 
 #step 2
 #remove_just-in-time from PMA 
@@ -246,75 +288,8 @@ grants$PMA[grants$Fund=="TF018938"] <- 'no'
                    #  'yes',
                    #  grants$PMA)
 
-PMA_grants <- grants %>% filter(PMA=='yes',`Fund Status` %in% c("ACTV","PEND"),`Grant Amount USD`>0)
+PMA_grants <- grants %>% filter(PMA=='yes',`Grant Amount USD`>0)
 
-n_months <- PMA_grants$months_to_end_disbursement_static[which.max(PMA_grants$months_to_end_disbursement_static)]
-list_monthly_resources <- rep(list(0),n_months)
-list_grant_df <- rep(list(0),nrow(PMA_grants))
-first_date <- as_date(date_data_udpated) %>% floor_date(unit = "months")
-
-# for (i in 1:nrow(PMA_grants)){
-#   
-#   print(i)
-#   temp_max_months <- PMA_grants$months_to_end_disbursement_static[i]
-#   temp_max_months <- ifelse(temp_max_months<=0,1,temp_max_months)
-#   monthly_allocation <- (PMA_grants$unnacounted_amount[i])/(ifelse(temp_max_months>0,
-#                                                                    temp_max_months,
-#                                                                    1))
-#   
-#   temp_df <- data_frame(fund=rep(as.character(PMA_grants$Fund[i]),temp_max_months),
-#                         fund_name=rep(as.character(PMA_grants$`Fund Name`[i]),temp_max_months),
-#                         trustee=rep(as.character(PMA_grants$Trustee[i]),temp_max_months),
-#                         fund_TTL=rep(as.character(PMA_grants$`Fund TTL Name`[i]),temp_max_months),
-#                         sub_date = first_date %m+% months(c(0:(temp_max_months-1))),
-#                         amount=rep(monthly_allocation,temp_max_months)
-#   )
-#   
-#   list_grant_df[[i]] <- temp_df
-#   
-#   for (j in 1:temp_max_months){
-#     list_monthly_resources[[j]] <- list_monthly_resources[[j]] + monthly_allocation
-#   }
-#   
-#   #print(list_monthly_resources[[1]])
-# }
-
-#gg_data <- do.call(rbind,list_grant_df)
-# 
-# data <- data.frame(month_num=1:n_months,
-#                    amount_available=unlist(list_monthly_resources))
-# 
-# data$dates <- first_date %m+% months(c(0:(nrow(data)-1)))
-# 
-# data$yearmonth <- paste0(year(data$dates),ifelse(month(data$dates)<10,
-#                                                  paste0(0,month(data$dates)),
-#                                                  month(data$dates)))
-# 
-# gg_data$yearmonth <- paste0(year(gg_data$sub_date),ifelse(month(gg_data$sub_date)<10,
-#                                                           paste0(0,month(gg_data$sub_date)),
-#                                                           month(gg_data$sub_date)))
-# 
-# data$yearquarter<- paste0(as.numeric(year(data$dates)),as.numeric(quarter(data$dates)))
-# gg_data$yearquarter<- paste0(as.numeric(year(gg_data$sub_date)),
-#                              as.numeric(quarter(gg_data$sub_date)))
-# 
-# data$quarterr <- zoo::as.yearqtr(data$dates)
-# gg_data$quarterr <- zoo::as.yearqtr(gg_data$sub_date)
-# 
-# gg_data$quarter_lubri <- lubridate::quarter(gg_data$sub_date,with_year = TRUE)
-# 
-# grouped_gg_data <- gg_data %>%
-#   mutate(quarterr=as_date(quarterr)) %>% 
-#   group_by(quarterr,fund_name,fund,yearquarter) %>%
-#   summarise(amount=sum(amount))
-# 
-# 
-# quarterly_total <- gg_data %>% mutate(quarterr=as_date(quarterr)) %>%
-#   group_by(quarterr) %>% summarise(Q_amount=sum(amount))
-# 
-# grouped_gg_data <- full_join(grouped_gg_data,quarterly_total,by="quarterr")
-# 
-# gg_df <- grouped_gg_data %>% filter(yearquarter<20210)
 
 grants$PMA.2 <- ifelse(grants$PMA=="yes","PMA","Operational")
 
@@ -324,11 +299,7 @@ grants <- grants %>% mutate(GPURL_binary = ifelse(`Lead GP/Global Themes`=="Urba
 
 grants$GPURL_binary[is.na(grants$GPURL_binary)] <- "Non-GPURL"
  
-#grants$region_color <- factor(grants$Region,
-                            #  labels = RColorBrewer::brewer.pal(length(unique(grants$Region)),
-                                                           #     name = "Set3"))
-
-
+#set REGION colors as per GFDRR's requested scheme
 regions_col_df <- data.frame(
   Region = c("LCR",
              "AFR",
@@ -355,54 +326,75 @@ grants <- left_join(grants,regions_col_df,by="Region")
 
 grants$unnacounted_amount[grants$`Fund Status`=='PEND'] <- 0
 ## REPORT PRODUCTION DATA PRE-PROCESSING 
-report_grants <- grants %>% rename("Child Fund" = Fund,
-                                   "Child Fund Name" = `Fund Name`,
-                                   "Child Fund Status" = `Fund Status`,
-                                   "Child Fund TTL Name" = `Fund TTL Name`,
-                                   "Managing Unit Name"=`Fund Managing Unit Name`,
-                                   "Closing FY" = closing_FY,
-                                   "Region Name" = Region,
-                                   "Trustee Fund Name" = temp.name,
-                                   "Grant Amount" = `Grant Amount USD`,
-                                   "Cumulative Disbursements"=`Disbursements USD`,
-                                   "PO Commitments"=`Commitments USD`,
-                                   "Execution Type"=`DF Execution Type`)
+report_grants <- grants %>%
+  rename(
+    "Child Fund #" = Fund,
+    "Child Fund Name" = `Fund Name`,
+    "Child Fund Status" = `Fund Status`,
+    "Child Fund TTL Name" = `Fund TTL Name`,
+    "Managing Unit" = `Fund Managing Unit Name`,
+    "Closing FY" = closing_FY,
+    "Region Name" = Region,
+    "Trustee Fund Name" = temp.name,
+    "Grant Amount" = `Grant Amount USD`,
+    "Cumulative Disbursements" = `Disbursements USD`,
+    "PO Commitments" = `Commitments USD`,
+    "Execution Type" = `DF Execution Type`,
+    "Window #" = `Window Number`,
+    "Trustee #" = Trustee,
+    "Lead GP/Global Theme" = `Lead GP/Global Themes`,
+    "2020 Disbursements" = `2020 Disbursement USD`,
+    "Remaining Available Balance" = unnacounted_amount,
+    "Required Monthly Disbursement Rate" = required_disbursement_rate,
+    "Disbursement Risk Level" = disbursement_risk_level,
+  ) %>%
+  mutate(
+    `TTL Unit` = as.character(`TTL Unit`),
+    `Window #` = as.numeric(`Window #`)
+  )
 
+#report_grants$`Uncommitted Balance`[report_grants$`Child Fund Status`=='PEND'] <- 0
 
-  report_grants$`Months to Closing Date` <- as.numeric(floor(
-  (difftime(
-    strptime(report_grants$`Closing Date`, format = "%Y-%m-%d",tz = "GMT"),
-    strptime(date_data_udpated, format = "%Y-%m-%d",tz="GMT"),
-    units="days")
-  )/(365.25/12)))
-  
-
-  
-  
-report_grants$`Months to Closing Date` <- ifelse(report_grants$`Months to Closing Date`== 0,
-                                                 1,
-                                                 report_grants$`Months to Closing Date`)
-  
-report_grants$`Uncommitted Balance` <-  report_grants$`Grant Amount` -
-  (report_grants$`Cumulative Disbursements` + report_grants$`PO Commitments`)
-
-
-report_grants$`Uncommitted Balance`[report_grants$`Child Fund Status`=='PEND'] <- 0
-
-
-report_grants <- report_grants %>% filter(`Child Fund`!="TF0B2168")
+report_grants <- report_grants %>% filter(`Child Fund #`!="TF0B2168")
 
 grants <- grants %>% filter(`Grant Amount USD` > 0)
 
+grants$`Remaining Available Balance` <- grants$unnacounted_amount
 
-all_fun <- function(INPUT,CHOICES){
-  if (INPUT == "ALL"){
-    
-    return(CHOICES)}
-  else{
-    
-    return(INPUT)}
-  
+
+processed_data <- list("raw_grants" = raw_grants,
+                       "grants" = grants,
+                       "report_grants" = report_grants,
+                       "trustee"=trustee,
+                       "active_trustee"=active_trustee,
+                       "PMA_grants" = PMA_grants,
+                       "date_data_udpated" = date_data_udpated,
+                       "report_data_date" = report_data_date)
+
+return(processed_data)
+
 }
+
+processed_data <- process_data_files()
+
+raw_grants <- processed_data[['raw_grants']]
+grants <- processed_data[['grants']]
+report_grants <- processed_data[['report_grants']]
+trustee <- processed_data[['trustee']]
+active_trustee <- processed_data[['active_trustee']]
+PMA_grants <- processed_data[['PMA_grants']]
+date_data_udpated <- processed_data[['date_data_updated']]
+report_data_date <- processed_data[['report_data_date']]
+
+risk_colors <- tibble(
+"Very High Risk" = "#C70039",
+"High Risk" = "#FF5733",
+"Medium Risk" = "#FFC300",
+"Low Risk" = "#86F9B7",
+"Closed (Grace Period)" = "#B7B7B7")
+
+
+
+rm(processed_data)
 
 

@@ -13,51 +13,13 @@ current_trustee_subset <- active_trustee %>%
 
 as.of.date <- date_data_udpated
 
+old_processed_data <- process_data_files(GRANTS_file = old_grants_file,TRUSTEE_file = old_trustee_file)
+
+old_data <- old_processed_data[['report_grants']] %>% filter(PMA=='no')
+
 data <- report_grants %>% filter(PMA=='no')
 
-data <- data %>%
-  rename(
-    "Window #" = `Window Number`,
-    "Trustee #" = Trustee,
-    "Child Fund #" = `Child Fund`,
-    "Lead GP/Global Theme" = `Lead GP/Global Themes`,
-    "Managing Unit" = `Managing Unit Name`,
-    "2020 Disbursements" = `2020 Disbursement USD`,
-    "Remaining Available Balance" = remaining_balance,
-    "Required Monthly Disbursement Rate =(Remaining/GrantAmount)/MonthClosing" = required_disbursement_rate
-  ) %>%
-  dplyr::mutate("Real Transfers in" = `Transfer-in USD` - `Transfers-out in USD`) %>%
-  dplyr::mutate("Not Yet Transferred" = `Grant Amount` - `Real Transfers in`)
-
-data <- data %>% mutate(`Window #` = as.numeric(`Window #`))
-
-#data <- read_xlsx(path = "data/FP_GFDRR Raw Data 3_4_2020.xlsx", sheet = 2, skip = 6)
-
-data <- data %>% mutate(`TTL Unit`= as.character(`TTL Unit`),
-                        `Required Monthly Disbursement Rate =(Remaining/GrantAmount)/MonthClosing` =
-                          as.numeric(`Required Monthly Disbursement Rate =(Remaining/GrantAmount)/MonthClosing`))
-
-data <- data %>% select(unique(names(data))) #%>% filter(!(`Child Fund #` %in% data$`Child Fund #`))
-
-
-
-#data <- dplyr::union(data,crews_data)
-
-data$`Remaining Available Balance` <- data$`Grant Amount`- (data$`Cumulative Disbursements` + data$`PO Commitments`)
-
-#closed <- which(data$`Required Monthly Disbursement Rate =(Remaining/GrantAmount)/MonthClosing`=='Closed')
-closed <- which(data$`Months to Closing Date`<0)
-
-data$`Required Monthly Disbursement Rate =(Remaining/GrantAmount)/MonthClosing` <- (data$`Remaining Available Balance`/data$`Grant Amount`)/data$`Months to Closing Date`
-
-data$`Required Monthly Disbursement Rate =(Remaining/GrantAmount)/MonthClosing`[closed] <- 999
-
 region <- 'ALL regions'
-
-#message(paste("Preparing report for",region))
-
-
-wb <- createWorkbook()
 
 funding_sources <- active_trustee$temp.name %>% #changeeeeee!
   unique() %>%
@@ -67,8 +29,9 @@ current_trustee_subset_collapsed <- sort(current_trustee_subset$temp.name)%>% #c
   unique() %>%
   paste(sep = "",collapse= "; ")
 
-
-df <- data %>%  select(`Closing FY`,`Trustee #`, 
+df_treatment <- function(Data=data){
+  
+df <- Data %>%  select(`Closing FY`,`Trustee #`, 
                      `Child Fund #`,
                      `Project ID`,
                      `Child Fund Name`,
@@ -86,88 +49,53 @@ df <- data %>%  select(`Closing FY`,`Trustee #`,
                      `PO Commitments`,
                      `Remaining Available Balance`,
                      `Months to Closing Date`,
-                     `Required Monthly Disbursement Rate =(Remaining/GrantAmount)/MonthClosing`)
-
-
-elapsed_months <- function(end_date, start_date) {
-  ed <- as.POSIXlt(end_date)
-  sd <- as.POSIXlt(start_date)
-  12 * (ed$year - sd$year) + (ed$mon - sd$mon)
-}
-
-#df$`Child Fund Months Active` <-  elapsed_months(data_date,df$`Activation Date`)
+                     `Required Monthly Disbursement Rate`,
+                     `Disbursement Risk Level`,
+                     `Trustee Fund Name`)
 
 df$`Uncommitted Balance (Percent)` <- df$`Remaining Available Balance`/df$`Grant Amount`
-
-df <- df %>% rename("Required Monthly Disbursement Rate" =
-                `Required Monthly Disbursement Rate =(Remaining/GrantAmount)/MonthClosing`)
-  
-  
-  
-#df$`Required Monthly Disbursement Rate` <- ifelse(df$`Required Monthly Disbursement Rate`=='Closed',
-                                              #  999,
-                                              #  as.numeric(df$`Required Monthly Disbursement Rate`))
-
-
-compute_risk_level <- function (x){
-  
-  risk_level <- ifelse(x == 999, "Closed (Grace Period)",
-    ifelse(x < .025,"Low Risk",
-                       ifelse(x < .055,"Medium Risk",
-                              ifelse(x < .105,"High Risk",
-                                     "Very High Risk"))))
-  
-  return(risk_level)
-}
-
-
-
-df$`Disbursement Risk Level` <- compute_risk_level(as.numeric(df$`Required Monthly Disbursement Rate`))
-
 
 df$`Grace Period` <- ifelse(df$`Disbursement Risk Level`=="Closed (Grace Period)",
                             "Yes",
                             "No")
-
-#if (!is.null(df$`Child Fund`=='TF0B2168')){
-  
-#df$`Grace Period`[df$`Child Fund`=='TF0B2168'] <- "Yes"}
-
-#df$`Disbursement Risk Level`[459] <- "Closed (Grace Period)"
 
 df <- df %>%
   arrange(match(`Disbursement Risk Level`,
                 c("Closed (Grace Period)","Very High Risk","High Risk","Medium Risk", "Low Risk" )))
 
 
-#df <- df %>% arrange(abs(as.numeric(`Required Monthly Disbursement Rate`)))
+df <- df %>% rename("Uncommitted Balance" = `Remaining Available Balance`)
+df <- df %>% mutate(GPURL_binary = ifelse(`Lead GP/Global Theme`=="Urban, Resilience and Land",
+                                          "GPURL",
+                                          "Non-GPURL"))
 
-df <- left_join(df,recode_trustee,
-                    by = c("Trustee #"="Trustee"))
+df$GPURL_binary[is.na(df$GPURL_binary)] <- "Non-GPURL"
+
+
+return(df)
+
+}
+
+
+df <- df_treatment()
+old_df <- df_treatment(Data=old_data)
 
 df$funding_sources <- paste0(df$`Trustee Fund Name`," (",df$`Trustee #`,")")
-
-# names_trustee_subset <- left_join(as.data.frame(trustee_subset),
-#   recode_trustee.2,by=c("trustee_subset"="Trustee")) %>%
-# mutate(name_number = paste0(`Trustee Fund Name`," (",trustee_subset,")"))
 
 trustee_subset_names_number <- sort(unique(df$funding_sources)) %>%
   paste(sep="",collapse="; ")
 
 df <- df %>% select(-funding_sources)
 
-#df$`Activation Date` <- as.Date.POSIXct(df$`Activation Date`)
 
-#df$`Months to Closing Date`<- round(df$`Months to Closing Date`,digits = 0)
+
+
+rm(wb)
+wb <- createWorkbook()
+
 
 options("openxlsx.dateFormat", "mm/dd/yyyy")
 
-df <- df %>% rename("Uncommitted Balance" = `Remaining Available Balance`)
-df <- df %>% mutate(GPURL_binary = ifelse(`Lead GP/Global Theme`=="Urban, Resilience and Land",
-                                 "GPURL",
-                                 "Non-GPURL"))
-
-df$GPURL_binary[is.na(df$GPURL_binary)] <- "Non-GPURL"
 
 sum_df_all <- df %>%
   summarise("# Grants" = n(),
@@ -228,7 +156,7 @@ risk_summary[6,] <-  c("Total Combined",
                        sum(risk_summary$`Total Grant Amount`),
                        sum(risk_summary$`Total Available Balance (Uncommitted)`))
 
-T_risk_summary <- risk_summary %>% data.table::transpose()
+T_risk_summary <- risk_summary %>% data.table::transpose(l=.)
 colnames(T_risk_summary) <- T_risk_summary[1,]
 T_risk_summary$Summary <- colnames(risk_summary)
 T_risk_summary <- T_risk_summary[-1,]
@@ -395,7 +323,9 @@ RISK.df.row <- 10
 
 excel_df <- df %>% rename("TTL Name"=`Child Fund TTL Name`,
                           "Available Balance (Uncommitted)"= `Uncommitted Balance`) %>% 
-  select(-c(`Uncommitted Balance (Percent)`,`Grace Period`,GPURL_binary)) %>% 
+  select(-c(`Uncommitted Balance (Percent)`,
+            `Grace Period`,
+            GPURL_binary)) %>% 
   mutate(`Required Monthly Disbursement Rate` = ifelse(`Required Monthly Disbursement Rate`==999,
                                                        NA,
                                                        round(`Required Monthly Disbursement Rate`, digits = 2)))
@@ -450,6 +380,7 @@ date_format <- createStyle(numFmt = "mm/dd/yyyy")
 num_format <- createStyle(numFmt = "NUMBER")
 wrapped_text <- createStyle(wrapText = TRUE,valign = "top")
 black_and_bold <- createStyle(fontColour = "#000000",textDecoration = 'bold')
+merge_wrap <- createStyle(halign = 'center',valign = 'center',wrapText = TRUE)#,border = "TopBottomLeftRight"
 addStyle(wb,1,rows=RISK.df.row,cols=1:(length(df)),style = header_style)
 
 number_format_range <- RISK.df.row:(nrow(df)+RISK.df.row)
@@ -657,16 +588,19 @@ addStyle(wb,2,wrapped_text,rows= f,cols=1:23)}
 
 for (i in all_regions){
 temp_df <- df %>%
-  filter(`Region Name` == i,
-         !is.na(`Lead GP/Global Theme`)
-  )
+  filter(`Region Name` == i)
+         #!is.na(`Lead GP/Global Theme`)
 
+#create and old temporary DF to add for comparison
+old_temp_df <- old_df %>% filter(`Region Name`==i)
 
 #getsummary df from previoys tab#2 and add it to the regional
 temp_risk_summary <- list_dfs[[i]]
 
 
 #begin creation of other dataframes in the worksheet
+regional_sum_display_df <- function (temp_df){
+
 sum_df_all <- temp_df %>%
   summarise("# Grants" = n(),
             "$ Amount" = sum(`Grant Amount`),
@@ -680,7 +614,6 @@ sum_df_all$uncommitted_8020 <- temp_df %>%
 sum_df_all$PO_8020 <- temp_df %>%
   filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name) %>% 
   select(`PO Commitments`) %>% sum()
-
 
 
 sum_df_GPURL <-  temp_df %>%
@@ -719,7 +652,6 @@ sum_df_non_GPURL$PO_8020 <- temp_df %>%
   select(`PO Commitments`) %>% sum()
 
 
-
 sum_display_df <- data.frame("Summary"= c("Grant Count",
                                           "Total $",
                                           "Total Available Balance (Uncommitted)",
@@ -733,6 +665,16 @@ sum_display_df <- data.frame("Summary"= c("Grant Count",
 names(sum_display_df) <- c("Summary","GPURL","Non-GPURL"," Combined Total")
 
 sum_display_df <- sum_display_df[-c(3:4),]
+
+return(sum_display_df)}
+
+current_summary <- paste0("Current Summary as of ",report_data_date) 
+
+sum_display_df <- regional_sum_display_df(temp_df) 
+                
+old_sum_display_df <- regional_sum_display_df(old_temp_df) 
+
+names(old_sum_display_df) <- c(paste0("Previous Month Summary as of ",old_processed_data[["report_data_date"]]),"GPURL","Non-GPURL"," Combined Total")
 #---------COUNTRIES DF ----------------------
 temp_df_all <- temp_df %>%
   group_by(Country) %>%
@@ -805,44 +747,54 @@ display_df_funding <- left_join(temp_df_all, display_df_partial , by = "Trustee 
 
 
 #temp_df <- reactive_df()
-report_title <- paste0("Summary of GFDRR ",i, " Portfolio (as of ",report_data_date,")")
+current_summary_title <- paste0("Summary of GFDRR ",i, " Portfolio (as of ",report_data_date,")")
+old_summary_title <- paste0("'Previous' Summary of GFDRR ",i, " Portfolio (as of ",old_processed_data['report_data_date'],")")
 
+by_country_title <-   paste0("Grant Details (by Country) as of ",report_data_date)
+funding_sources_title <- paste0("Grant Details (by Funding Source) as of ", report_data_date)
+  
 addWorksheet(wb,i)
 # mergeCells(wb,1,c(2,3,4),1)
 
 i <- (which(all_regions==i))+2
 
-writeData(wb,i,
-          report_title,
-          startRow = 1,
-          startCol = 2)
+
+
+writeData(wb,i,old_summary_title,startRow = 2,startCol = 1) 
+mergeCells(wb,i,cols = 1,rows = 2:6)
+addStyle(wb,i,rows = 2:6, cols = 1, style = merge_wrap,stack = TRUE)
+
+writeData(wb,i,current_summary_title,startRow = 9,startCol = 1)
+mergeCells(wb,i,cols = 1,rows = 9:13)
+addStyle(wb,i,rows = 9:13, cols = 1, style = merge_wrap,stack = TRUE)
 
 #define row number for start of Grant Detail (by country) table. 
-sr <- 12
+sr <- 15
 
-writeDataTable(wb,i,  sum_display_df, startRow = 3, startCol = 2, withFilter = F)
-writeDataTable(wb,i,  temp_risk_summary, startRow = 3, startCol = 7, withFilter = F)
-writeDataTable(wb,i,  display_df, startRow = sr, startCol = 2,withFilter = F)
-writeDataTable(wb,i,  display_df_funding, startRow = ((sr+4)+(nrow(display_df))), startCol = 2,withFilter = F)
-
-writeData(wb,i,
-          "Grant Details (by Country)",
-          startRow = sr-1,
-          startCol = 2)
+writeDataTable(wb,i,old_sum_display_df, startRow = 2, startCol = 2, withFilter = F,tableStyle = "TableStyleLight11")
+writeDataTable(wb,i,sum_display_df, startRow = 9, startCol = 2, withFilter = F)
+writeDataTable(wb,i,temp_risk_summary, startRow = 2, startCol = 7, withFilter = F)
+writeDataTable(wb,i,display_df, startRow = sr, startCol = 2,withFilter = F)
+writeDataTable(wb,i,display_df_funding, startRow = ((sr+4)+(nrow(display_df))), startCol = 2,withFilter = F)
 
 
 #FORMULAS FOR TOTALS IN DISPLAY DF  -----------
 end_row.display_df <- (sr+nrow(display_df))
 
-writeFormula(wb,i,x=paste0("=SUM(C12:C",end_row.display_df,")"),startCol = 3,startRow = (end_row.display_df+1))
-writeFormula(wb,i,x=paste0("=SUM(D12:D",end_row.display_df,")"),startCol = 4,startRow = (end_row.display_df+1))
-writeFormula(wb,i,x=paste0("=SUM(E12:E",end_row.display_df,")"),startCol = 5,startRow = (end_row.display_df+1))
-writeFormula(wb,i,x=paste0("=SUM(F12:F",end_row.display_df,")"),startCol = 6,startRow = (end_row.display_df+1))
-writeFormula(wb,i,x=paste0("=SUM(G12:G",end_row.display_df,")"),startCol = 7,startRow = (end_row.display_df+1))
-writeFormula(wb,i,x=paste0("=SUM(H12:H",end_row.display_df,")"),startCol = 8,startRow = (end_row.display_df+1))
-writeFormula(wb,i,x=paste0("=SUM(I12:I",end_row.display_df,")"),startCol = 9,startRow = (end_row.display_df+1))
-writeFormula(wb,i,x=paste0("=SUM(J12:J",end_row.display_df,")"),startCol = 10,startRow = (end_row.display_df+1))
-writeFormula(wb,i,x=paste0("=SUM(K12:K",end_row.display_df,")"),startCol = 11,startRow = (end_row.display_df+1))
+writeData(wb,i,by_country_title,startRow = sr,startCol = 1)
+mergeCells(wb,i,cols=1,rows=sr:end_row.display_df)
+addStyle(wb,i,cols = 1,rows=sr:end_row.display_df, style = merge_wrap,stack = TRUE)
+
+
+writeFormula(wb,i,x=paste0("=SUM(C",sr,":C",end_row.display_df,")"),startCol = 3,startRow = (end_row.display_df+1))
+writeFormula(wb,i,x=paste0("=SUM(D",sr,":D",end_row.display_df,")"),startCol = 4,startRow = (end_row.display_df+1))
+writeFormula(wb,i,x=paste0("=SUM(E",sr,":E",end_row.display_df,")"),startCol = 5,startRow = (end_row.display_df+1))
+writeFormula(wb,i,x=paste0("=SUM(F",sr,":F",end_row.display_df,")"),startCol = 6,startRow = (end_row.display_df+1))
+writeFormula(wb,i,x=paste0("=SUM(G",sr,":G",end_row.display_df,")"),startCol = 7,startRow = (end_row.display_df+1))
+writeFormula(wb,i,x=paste0("=SUM(H",sr,":H",end_row.display_df,")"),startCol = 8,startRow = (end_row.display_df+1))
+writeFormula(wb,i,x=paste0("=SUM(I",sr,":I",end_row.display_df,")"),startCol = 9,startRow = (end_row.display_df+1))
+writeFormula(wb,i,x=paste0("=SUM(J",sr,":J",end_row.display_df,")"),startCol = 10,startRow = (end_row.display_df+1))
+writeFormula(wb,i,x=paste0("=SUM(K",sr,":K",end_row.display_df,")"),startCol = 11,startRow = (end_row.display_df+1))
 
 writeData(wb,i,x="Total",startCol = 2,startRow = (end_row.display_df+1))
 
@@ -851,10 +803,10 @@ start_row.funding <- (sr+nrow(display_df)+5)
 end_row.funding <- (sr+nrow(display_df)+4+nrow(display_df_funding))
 
 
-writeData(wb,i,
-          "Grant Details (by Funding Source)",
-          startRow = end_row.display_df+3,
-          startCol = 2)
+writeData(wb,i,funding_sources_title,startRow = start_row.funding-1,startCol = 1)
+mergeCells(wb,i,cols=1,rows= (start_row.funding-1):end_row.funding)
+addStyle(wb,i,rows= (start_row.funding-1):end_row.funding, cols = 1, style = merge_wrap,stack = TRUE)
+
 
 writeFormula(wb,i,x=paste0("=SUM(C",start_row.funding,":C",end_row.funding,")"),startCol = 3,startRow = (end_row.funding+1))
 writeFormula(wb,i,x=paste0("=SUM(D",start_row.funding,":D",end_row.funding,")"),startCol = 4,startRow = (end_row.funding+1))
@@ -874,9 +826,16 @@ writeData(wb,i,x="Total",startCol = 2,startRow = (end_row.funding+1))
 percent_format <- createStyle(numFmt = "0%")
 total_style <- createStyle(bgFill = "#5A52FA",fontColour = "#FFFFFF",textDecoration = "bold")
 
-addStyle(wb,i,dollar_format,row=5,cols=3:5)
-addStyle(wb,i,dollar_format,row=6,cols=3:5)
-addStyle(wb,i,dollar_format,row=7,cols=3:5)
+#add style to "Previous Summary table"
+addStyle(wb,i,dollar_format,rows=4,cols=3:5)
+addStyle(wb,i,dollar_format,rows=5,cols=3:5)
+addStyle(wb,i,dollar_format,rows=6,cols=3:5)
+
+#add style to "Current Summary table"
+addStyle(wb,i,dollar_format,rows=11,cols=3:5)
+addStyle(wb,i,dollar_format,rows=12,cols=3:5)
+addStyle(wb,i,dollar_format,rows=13,cols=3:5)
+
 
 dollar_columns_Country <- c(4,5,7,8,10,11)
 
@@ -896,7 +855,7 @@ for (j in dollar_columns_funding_sources){
 
 setColWidths(wb,i, cols = 1:ncol(display_df)+1, widths = "auto")
 
-setColWidths(wb,i, cols =1, widths = 4)
+setColWidths(wb,i, cols =1, widths = 17)
 setColWidths(wb,i, cols =2, widths = 60)
 setColWidths(wb,i, cols =3, widths = 15)
 setColWidths(wb,i, cols =4, widths = 15)
@@ -913,10 +872,9 @@ setColWidths(wb,i, cols =15, widths = 15)
 setColWidths(wb,i, cols =16, widths = 19)
 setColWidths(wb,i, cols =17, widths = 15)
 
-addStyle(wb,i,wrapped_text,cols=1:11,rows = sr,stack = TRUE)
-addStyle(wb,i,wrapped_text,cols=1:14,rows = (start_row.funding-1),stack = TRUE)
+addStyle(wb,i,wrapped_text,cols=2:11,rows = sr,stack = TRUE)
+addStyle(wb,i,wrapped_text,cols=2:14,rows = (start_row.funding-1),stack = TRUE)
 addStyle(wb,i,wrapped_text,cols=2:17,rows = 3,stack = TRUE)
-
 
 
 addStyle(wb,i,very_high_risk,rows = 4,cols = 7)
@@ -928,16 +886,15 @@ addStyle(wb,i,grace_period_style,rows = 8,cols = 7)
 
 
 #add dollar formats to risk summary regional table
-for(ROW in 4:9){
-addStyle(wb,i,dollar_format,row = ROW ,cols=c(9,10,11,12,14,15,16,17))
+for(ROW in 3:8){
+addStyle(wb,i,dollar_format,rows = ROW ,cols=c(9,10,11,12,14,15,16,17))
 }
 
-addStyle(wb,i,total_style,rows=9,cols = 7:17,stack=TRUE)
-addStyle(wb,i,total_style,rows=(end_row.display_df+1),cols = 2:11,stack=TRUE)
-addStyle(wb,i,total_style,rows=(end_row.funding+1),cols = 2:14,stack=TRUE)
+addStyle(wb,i,total_style,rows = 8,cols = 7:17,stack=TRUE)
+addStyle(wb,i,total_style,rows = (end_row.display_df+1),cols = 2:11,stack=TRUE)
+addStyle(wb,i,total_style,rows = (end_row.funding+1),cols = 2:14,stack=TRUE)
 
 }
-
 
 #add raw_data tab 
 raw_data <- read.xlsx(grants_file)
