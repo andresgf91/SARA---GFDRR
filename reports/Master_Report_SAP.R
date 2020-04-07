@@ -186,7 +186,7 @@ legend_text <- c("Closed. These grants are under the grace period.",
                  "Low Risk (<  3% / month disbursement required)")
 
 report_title <- paste("Disbursement Risk for",region,"as of",as.of.date)
-tab_title <- "GFDRR ACTIVE GRANTS"
+tab_title <- paste0("GFDRR ACTIVE GRANTS (as of ",date_data_udpated,")")
 
 tab.names <- c("Full Grants List","Risk Summary")
 funding_sources <- paste("Funding Sources:",trustee_subset_names_number)
@@ -448,7 +448,9 @@ addStyle(wb,1,dollar_format,6,8:13,stack = T)
 ##TAB 2. EXCEL---------------------------------
 addWorksheet(wb, tab.names[2])
 
-writeData(wb,2,"Summary of GFDRR Active Grants by Risk Category",startCol = 1,startRow = 1)
+summary_title <- paste0("Summary of GFDRR Active Grants by Risk Category as of ",date_data_udpated,")")
+
+writeData(wb,2,summary_title,startCol = 1,startRow = 1)
 
 writeData(wb,2,names(list_dfs[1]),startCol = 1,startRow = 3)
 writeDataTable(wb,2,list_dfs[[1]],startCol = 1,startRow = 5,
@@ -896,12 +898,17 @@ addStyle(wb,i,total_style,rows = (end_row.funding+1),cols = 2:14,stack=TRUE)
 
 }
 
+
+if(JAIME_preprocess==FALSE){
 #add raw_data tab 
 raw_data <- read.xlsx(grants_file)
 raw_data <- raw_data %>% filter(Fund %in% df$`Child Fund #`)
 addWorksheet(wb,"Raw Data (SAP)")
 writeDataTable(wb,sheet="Raw Data (SAP)",x = raw_data)
 rm(raw_data)
+}
+
+
 rm(excel_df)
 
 

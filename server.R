@@ -48,7 +48,7 @@ server <- shinyServer(function(input,output,session) {
           title="Edit View",
           id= 1,
           icon="desktop",
-          active=TRUE,
+          #active=TRUE,
           checkboxGroupButtons(
             'select_trustee',
             "Selected trustee:",
@@ -348,7 +348,7 @@ server <- shinyServer(function(input,output,session) {
         mutate(`Net Signed Condribution in USD`= dollar(`Net Signed Condribution in USD`,accuracy = 1),
                `Net Unpaid contribution in USD`= dollar(`Net Unpaid contribution in USD`,accuracy = 1),
                `Available Balance USD`= dollar(`Available Balance USD`,accuracy = 1),
-               `Months Left to Disburse`= round(`Months Left to Disburse`,digits = 0))
+               `Months Left to Disburse`= as.character(`Months Left to Disburse`,digits = 0))
       
   
       
@@ -688,14 +688,14 @@ server <- shinyServer(function(input,output,session) {
               hoverinfo = 'text',
               textinfo = 'text',
               type = 'pie',
-              rotation=110,
+              rotation=75,
               domain = list(x = c(0.00, 0.97), y = c(0, 0.95)),
-              textfont = list(color = '#000000', size = 9.5)) %>%
+              textfont = list(color = '#000000', size = 10)) %>%
         layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                margin=m,
                showlegend = T,
-               legend = list(font = list(size = 9)))
+               legend = list(font = list(size = 10)))
       
       
     })
@@ -987,7 +987,7 @@ server <- shinyServer(function(input,output,session) {
           layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                  yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                  margin = m,
-                 legend = list(orientation = 'h',font = list(size = 9), x=0.25, y=-0.01))
+                 legend = list(orientation = 'h',font = list(size = 11), x=0.25, y=-0.01))
       })
     
 
@@ -998,7 +998,7 @@ server <- shinyServer(function(input,output,session) {
           temp_df <- temp_df %>% 
             summarise(Disbursed = sum(`Disbursements USD`),
                       Committed = sum(`Commitments USD`),
-                      Uncommitted = sum(`Remaining Available Balance`)) %>%
+                      "Available (Uncommitted)" = sum(`Remaining Available Balance`)) %>%
             reshape2::melt()
           
           temp_df$percentage <- temp_df$value/sum(temp_df$value)
@@ -1033,7 +1033,7 @@ server <- shinyServer(function(input,output,session) {
             layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                    yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                    margin = m,
-                   legend = list(orientation = 'h',font = list(size = 9), x=0.1, y=-0.1))
+                   legend = list(orientation = 'h',font = list(size = 11), x=0.1, y=-0.1))
         })
       
       output$trustee_active_grants <- renderValueBox({
@@ -1088,9 +1088,12 @@ server <- shinyServer(function(input,output,session) {
         
         temp_grants <- reactive_grants_trustee()
         temp_grants %>%
-          filter(`Months to Closing Date` <= 3) %>% nrow() %>% 
-          valueBox(subtitle = show_grant_button("Grants closing in less than 6 months ",
-                                                "show_grants_closing_3"),
+          filter(`Months to Closing Date` <= 3) %>% 
+          filter(`Months to Closing Date` >= 0) %>%
+          nrow() %>% 
+          valueBox(subtitle =
+                     show_grant_button("Grants closing in less than 3 months ",
+                                       "show_grants_closing_3"),
                    value=.,
                    color = 'light-blue')
         
@@ -1100,7 +1103,8 @@ server <- shinyServer(function(input,output,session) {
         temp_grants <- reactive_grants_trustee()
         
         isolate(data <- temp_grants %>% 
-                  filter(`Months to Closing Date` <= 3) %>%
+                  filter(`Months to Closing Date` <= 3,
+                         `Months to Closing Date` >= 0) %>%
                   select(Fund,
                          `Fund Name`,
                          `Fund TTL Name`,
@@ -1410,7 +1414,7 @@ server <- shinyServer(function(input,output,session) {
         temp_df <- reactive_df()
         temp_df <- temp_df %>% 
           summarise("Disbursed" = sum(`Disbursements USD`),
-                    "Uncommitted" = round(sum(`Remaining Available Balance`)),
+                    "Available (Uncommitted)" = round(sum(`Remaining Available Balance`)),
                     "Committed"= sum(`Commitments USD`)) %>% reshape2::melt()
         
         temp_df$percentage <- temp_df$value/sum(temp_df$value)
@@ -1420,7 +1424,7 @@ server <- shinyServer(function(input,output,session) {
         m <- list(
           l = 0,
           r = 0,
-          b = 10,
+          b = 12,
           t = 10,
           pad = 4
         )
@@ -1439,7 +1443,7 @@ server <- shinyServer(function(input,output,session) {
           layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                  yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                  margin=m,
-                 legend = list(orientation = 'h',font = list(size = 9), x=0.25, y=-0.01))
+                 legend = list(orientation = 'h',font = list(size = 11), x=0.25, y=-0.01))
       })
       
 
@@ -1451,7 +1455,7 @@ server <- shinyServer(function(input,output,session) {
        valor <- sum(temp_df$`Grant Amount USD`) %>%
           as.numeric() %>%
           dollar()
-         valueBox(subtitle = "Total Funding",
+         valueBox(subtitle = "Total Portfolio Amount",
                    value =tags$p(valor, style = "font-size: 65%;"),
                    color = 'navy')
       })
@@ -1521,7 +1525,11 @@ server <- shinyServer(function(input,output,session) {
           pad = 2
         )
         
-        data$pie_name[data$pie_name=="Environment, Natural Resources & the Blue Economy"] <- "Environment, Natural Resources \n& the Blue Economy"
+        
+        data$pie_name[data$pie_name=="Urban, Resilience and Land"] <- "Urban, Resilience & Land"
+        
+        
+        data$pie_name[data$pie_name=="Environment, Natural Resources & the Blue Economy"] <- "Environment,\nNatural Resources \n& the Blue Economy"
         
         data$pie_name[data$pie_name=="Finance, Competitiveness and Innovation"] <- "Finance, Competitiveness \n& Innovation"
         
@@ -1546,7 +1554,7 @@ server <- shinyServer(function(input,output,session) {
                  yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                  margin=m,
                  showlegend = T,
-                 legend = list(font = list(size = 8)))
+                 legend = list(font = list(size = 10)))
         
         
         
@@ -2286,7 +2294,7 @@ server <- shinyServer(function(input,output,session) {
         temp_df <- reactive_df()
         valor <- temp_df %>% filter(`Not Yet Transferred` > 1,percent_transferred_available<.3) %>% nrow()
           valueBox(value =tags$p(valor, style = "font-size: 85%;"),
-                   subtitle = show_grant_button(title = "May require funds transferred",
+                   subtitle = show_grant_button(title = "May require funds transferred ",
                                                 id_name = "show_grants_need_transfer"),
                    color = 'light-blue')
 
@@ -2539,18 +2547,18 @@ server <- shinyServer(function(input,output,session) {
                        `Not Yet Transferred`,
                        percent_left_to_transfer) %>%
                 arrange(percent_transferred_available) %>%
-                rename("Percent Uncommitted" = percent_unaccounted,
+                rename("Percent Available" = percent_unaccounted,
                        "Percent of grant not yet transferred" = percent_left_to_transfer,
                        "Amount not yet trasnferred"= `Not Yet Transferred`,
                        "Percent of funds transferred available"= percent_transferred_available))
       
       reactive_data$download_table <- data %>%
-        mutate(`Percent Uncommitted`=round(`Percent Uncommitted`/100,3),
+        mutate(`Percent Availale`=round(`Percent Available`/100,3),
                `Percent of grant not yet transferred` = round(`Percent of grant not yet transferred`,3),
                `Percent of funds transferred available` = round(`Percent of funds transferred available`,3))
         
       data <- data %>% 
-        mutate(`Percent Uncommitted` = percent((`Percent Uncommitted`/100),accuracy = .1),
+        mutate(`Percent Available` = percent((`Percent Available`/100),accuracy = .1),
                `Grant Amount USD` = dollar(`Grant Amount USD`),
                `Percent of grant not yet transferred` = percent(`Percent of grant not yet transferred`),
                `Percent of funds transferred available` = percent(`Percent of funds transferred available`,accuracy = .1),
@@ -2800,18 +2808,18 @@ server <- shinyServer(function(input,output,session) {
                        `Months to Closing Date`,
                        required_disbursement_rate) %>%
                 arrange(-required_disbursement_rate)  %>%
-                rename("Percent Uncommitted" = percent_unaccounted,
+                rename("Percent Available" = percent_unaccounted,
                        "Required Monthly Disbursement Rate" = required_disbursement_rate))
       
       
       reactive_data$download_table <- data %>%
-        mutate(`Percent Uncommitted`=round(`Percent Uncommitted`/100,3),
+        mutate(`Percent Available`=round(`Percent Available`/100,3),
                `Required Monthly Disbursement Rate` = round(`Required Monthly Disbursement Rate`,3))
       
       data <- data %>%
-        mutate(`Percent Uncommitted` = percent((`Percent Uncommitted`/100)),
+        mutate(`Percent Available` = percent((`Percent Available`/100)),
                `Grant Amount USD` = dollar(`Grant Amount USD`),
-               `Required Monthly Disbursement Rate` = percent(`Required Monthly Disbursement Rate`),
+               `Required Monthly Disbursement Rate` = percent(`Required Monthly Disbursement Rate`,accuracy = 1),
                `Months to Closing Date`= as.character(`Months to Closing Date`))
       
       showModal(modalDialog(size = 'l',
@@ -3386,7 +3394,6 @@ server <- shinyServer(function(input,output,session) {
             NULL
           })
         })
-
   
         #-----------DOWNLOAD SUMMARY REPORT----------      
         output$Download_summary_report.xlsx <- downloadHandler(

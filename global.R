@@ -10,12 +10,17 @@ options(scipen = 999)
 #NEEDS UPDATING
 
 #grants_file <- "GFDRR Grant Level Dashboard Data 1_27_2020.xlsx"
-old_grants_file <- "data/GFDRR Grant Level Raw Data Sara 2_13_20.xlsx"
-grants_file <- "data/GFDRR Grant Level Sara Data 3_4_2020.xlsx"
+#old_grants_file <- "data/GFDRR Grant Level Raw Data Sara 2_13_20.xlsx"
+#old_trustee_file <- "data/GFDRR Trustee Level Raw Data Sara 2_13_2020.xlsx"
 
-old_trustee_file <- "data/GFDRR Trustee Level Raw Data Sara 2_13_2020.xlsx"
-trustee_file <- "data/GFDRR Trustee Level Sara Data 3_4_2020.xlsx"
 
+old_grants_file <- "data/GFDRR Grant Level Sara Data 3_4_2020.xlsx"
+old_trustee_file <- "data/GFDRR Trustee Level Sara Data 3_4_2020.xlsx"
+
+grants_file <- "data/GFDRR Sara Raw Data 4_5_20.xlsx"
+trustee_file <- "data/GFDRR Sara Trustee Data 4_5_20.xlsx"
+
+JAIME_preprocess <- TRUE
 
 #fp_raw_data <- read_xlsx(path = "data/GFDRR Raw Data 2_13_2020.xlsx",sheet = 2,skip = 6)
 fp_raw_data <- read_xlsx(path = "data/FP_GFDRR Raw Data 3_4_2020.xlsx",sheet = 2,skip = 6)
@@ -73,9 +78,77 @@ swedish_grants_to_remove <- c("TF070808","TF080129")
 
 #rename_grants in GRANTS 
 
-if (!is.null(grants$`Lead GP/Global Theme`)){
+grant_names <- names(grants)
+
+print(grant_names)
+
+if ("Lead GP/Global Theme" %in% grant_names){
   grants <- grants %>% dplyr::rename("Lead GP/Global Themes"=`Lead GP/Global Theme`)
+  message("Changed col name LEAD GP/Global Theme")
 }
+
+if ("Child Fund" %in% grant_names){
+  grants <- grants %>% dplyr::rename("Fund"=`Child Fund`)
+  message("Changed col name FUND")
+}
+
+if ("Child Fund Name" %in% grant_names){
+  grants <- grants %>% dplyr::rename("Fund Name"=`Child Fund Name`)
+  message("Changed col name CHILD FUND NAME")
+}
+
+if ("Child Fund Status" %in% grant_names){
+  grants <- grants %>% dplyr::rename("Fund Status"=`Child Fund Status`)
+  message("Changed col name FUND STATUS")
+}
+
+if ("Child Fund TTL Name" %in% grant_names){
+  grants <- grants %>% dplyr::rename("Fund TTL Name"=`Child Fund TTL Name`)
+  message("Changed col name FUND TTL NAME")
+}
+
+if ("Grant Amount" %in% grant_names){
+  grants <- grants %>% dplyr::rename("Grant Amount USD"=`Grant Amount`)
+  message("Changed col name GRANT AMOUT USD")
+}
+
+if ("Cumulative Disbursements" %in% grant_names){
+  grants <- grants %>% dplyr::rename("Disbursements USD"=`Cumulative Disbursements`)
+  message("Changed col name DISBURSEMENTS USD")
+}
+
+if ("PO Commitments" %in% grant_names){
+  grants <- grants %>% dplyr::rename("Commitments USD"=`PO Commitments`)
+  message("Changed col name Commitments USD")
+}
+
+if ("Execution Type" %in% grant_names){
+  grants <- grants %>% dplyr::rename("DF Execution Type"=`Execution Type`)
+  message("Changed col name DF Execution Type")
+}
+
+if ("2020 Disbursements" %in% grant_names){
+  grants <- grants %>% dplyr::rename("2020 Disbursement USD"=`2020 Disbursements`)
+  message("Changed col name 2020 Disbursement USD")
+}
+
+if ("Transfer-in" %in% grant_names){
+  grants$`Transfer-in USD` <- grants$`Transfer-in`
+  message("ADDED col TRANSFER IN USD")
+}
+
+if ("Transfers-out" %in% grant_names){
+  grants$`Transfers-out in USD` <-  grants$`Transfers-out`
+  message("ADDED col Transfers-out in USD")
+}
+
+if (!("Fund Managing Unit Name" %in% grant_names)){
+  
+  grants$`Fund Managing Unit Name` <- grants$`TTL Unit Name`
+
+}
+
+print(names(grants))
 
 #rename columns in trustee df if neccessary
 trustee_names <- names(trustee)
@@ -98,7 +171,7 @@ grants <- grants %>% filter(!(Fund %in% swedish_grants_to_remove))
 #ADDING LEAD GP/GLOBAL THEMES-----------
 
 # Change name of CLimate Change to Climate Change/GFDRR
-recode_GT$`Lead GP/Global Themes`[which(recode_GT$`Lead GP/Global Themes`=="Climate Change")] <- "Climate Change/GFDRR" #????
+recode_GT$`Lead GP/Global Themes`[which(recode_GT$`Lead GP/Global Themes`=="Climate Change")] <- "Climate Change/GFDRR" 
 grants$`Lead GP/Global Themes`[which(grants$`Lead GP/Global Themes`=="Climate Change")] <- "Climate Change/GFDRR"
 
 
@@ -110,9 +183,18 @@ active_trustee <- left_join(active_trustee,recode_trustee,by=c("Fund"="Trustee")
   rename("Trustee.name"=`Trustee Fund Name`)
 
 #add short region name to SAP data 
-grants <- full_join(grants,recode_region,by=c("Fund Country Region Name"='Region_Name'))
+
+
+if("Fund Country Region Name" %in% grant_names){
+  
+grants <- full_join(grants,recode_region,by=c("Fund Country Region Name"='Region_Name'))}
 
 #filter out grants that have 0 or that are not considered "Active" as per GFDRR definition which includes PEND
+
+grants$`Available Balance USD` <- grants$`Grant Amount USD` -
+  (grants$`Commitments USD` + grants$`Disbursements USD`)
+
+
 
 raw_grants <- grants
 
@@ -262,10 +344,11 @@ compute_risk_color<- function (x){
 grants$disbursement_risk_color <- compute_risk_color(grants$required_disbursement_rate) 
 
 #compute adjusted transfers (accounting for transfers out)
+
 grants$`Real Transfers in` <- grants$`Transfer-in USD` - grants$`Transfers-out in USD`
 
 #compute percentage of what was transferred that is available
-grants$percent_transferred_available <- grants$`Available Balance USD`/grants$`Real Transfers in`
+grants$percent_transferred_available <- grants$unnacounted_amount/grants$`Real Transfers in`
 
 #amount that is still available to be transferred
 grants$`Not Yet Transferred` <- grants$`Grant Amount USD` - grants$`Real Transfers in`
@@ -322,9 +405,8 @@ regions_col_df <- data.frame(
 
 
 grants <- left_join(grants,regions_col_df,by="Region")
+grants$`Remaining Available Balance` <- grants$unnacounted_amount
 
-
-grants$unnacounted_amount[grants$`Fund Status`=='PEND'] <- 0
 ## REPORT PRODUCTION DATA PRE-PROCESSING 
 report_grants <- grants %>%
   rename(
@@ -344,22 +426,20 @@ report_grants <- grants %>%
     "Trustee #" = Trustee,
     "Lead GP/Global Theme" = `Lead GP/Global Themes`,
     "2020 Disbursements" = `2020 Disbursement USD`,
-    "Remaining Available Balance" = unnacounted_amount,
     "Required Monthly Disbursement Rate" = required_disbursement_rate,
-    "Disbursement Risk Level" = disbursement_risk_level,
+    "Disbursement Risk Level" = disbursement_risk_level
   ) %>%
   mutate(
     `TTL Unit` = as.character(`TTL Unit`),
     `Window #` = as.numeric(`Window #`)
   )
 
-#report_grants$`Uncommitted Balance`[report_grants$`Child Fund Status`=='PEND'] <- 0
 
-report_grants <- report_grants %>% filter(`Child Fund #`!="TF0B2168")
+#report_grants <- report_grants %>% filter(`Child Fund #`!="TF0B2168")
 
 grants <- grants %>% filter(`Grant Amount USD` > 0)
 
-grants$`Remaining Available Balance` <- grants$unnacounted_amount
+
 
 
 processed_data <- list("raw_grants" = raw_grants,
@@ -383,7 +463,7 @@ report_grants <- processed_data[['report_grants']]
 trustee <- processed_data[['trustee']]
 active_trustee <- processed_data[['active_trustee']]
 PMA_grants <- processed_data[['PMA_grants']]
-date_data_udpated <- processed_data[['date_data_updated']]
+date_data_udpated <- processed_data[['date_data_udpated']]
 report_data_date <- processed_data[['report_data_date']]
 
 risk_colors <- tibble(

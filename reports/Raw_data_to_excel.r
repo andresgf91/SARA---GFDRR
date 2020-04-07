@@ -65,18 +65,21 @@ active_grants$`Disbursement Risk Level` <- factor(active_grants$`Disbursement Ri
 
 active_grants <- active_grants %>% arrange(`Disbursement Risk Level`)
 
+active_grants$`Required Monthly Disbursement Rate`[active_grants$`Disbursement Risk Level`==
+                                                     "Closed (Grace Period)"] <- NA
 
-trustee <- trustee %>%
+
+D.trustee <- trustee %>%
   select(`Donor Name`,Fund,`Fund Name`,`Fund TTL Name`,`TF End Disb Date`) 
 
 
-names(trustee) <- c("Donor",
+names(D.trustee) <- c("Donor",
                     "Trustee",
                     "Trustee Fund Name",
                     "Trustee Fund TTL Name",
                     "End Disbursement Date")
 
-trustee <- trustee %>% arrange(Donor)
+D.trustee <- D.trustee %>% arrange(Donor)
 
 
 #create excel workbook
@@ -96,7 +99,7 @@ writeDataTable(wb,"PMA Grants", PMA_grants_excel,
                withFilter = TRUE,tableStyle = "TableStyleLight12")
 
 addWorksheet(wb, "GFDRR TFs")
-writeDataTable(wb,"GFDRR TFs", trustee,
+writeDataTable(wb,"GFDRR TFs", D.trustee,
                withFilter = TRUE,tableStyle = "TableStyleLight10")
 
 
@@ -166,6 +169,7 @@ addStyle(wb,2,rows=4,cols = 6, style = high_risk)
 addStyle(wb,2,rows=5,cols = 6, style = medium_risk)
 addStyle(wb,2,rows=6,cols = 6, style = low_risk)
 
+if(JAIME_preprocess == FALSE){
 
 all_grants_row_range <- 1:nrow(all_grants)+1
 addStyle(wb,1,rows=all_grants_row_range,cols=25,style=date_format)   #activation date
@@ -177,7 +181,7 @@ addStyle(wb,1,rows=all_grants_row_range,cols=30,style=dollar_format) #commitment
 addStyle(wb,1,rows=all_grants_row_range,cols=31,style=dollar_format) #available balance
 addStyle(wb,1,rows=all_grants_row_range,cols=32,style=dollar_format) #real- transfer-in
 addStyle(wb,1,rows=all_grants_row_range,cols=33,style=dollar_format) #Not yet Transferred
-
+}
 
 active_grants_row_range <- 9:(nrow(active_grants)+8)
 addStyle(wb,2,rows=active_grants_row_range,cols=17,style=date_format,stack = TRUE)   #activation date
@@ -215,7 +219,7 @@ addStyle(wb,3,rows=PMA_grants_row_range,cols=27,style=percent_format,stack = TRU
 addStyle(wb,3,rows = 1,cols = 1:ncol(PMA_grants_excel),style = wrapped_text,stack = TRUE)
 
 
-addStyle(wb,4,rows=1:nrow(trustee)+1,cols=5,style=date_format,stack = TRUE)
-setColWidths(wb,4, cols = 1:ncol(trustee), widths = "auto")
+addStyle(wb,4,rows=1:nrow(D.trustee)+1,cols=5,style=date_format,stack = TRUE)
+setColWidths(wb,4, cols = 1:ncol(D.trustee), widths = "auto")
 
 

@@ -205,9 +205,6 @@ tab.1 <-  tabItem(tabName = "overview",
 
 
 
-                    
-                  
-
 # tab 1.3 (additional info)------
 tab.1.3 <-  tabItem(tabName = "admin_info",
                       titlePanel('Additional Information'),
@@ -238,7 +235,7 @@ tab.1.3 <-  tabItem(tabName = "admin_info",
 
 ## tab.2 (Parent Trustfund View) ----------------------
 tab.2 <- tabItem(tabName = "parent_tf",
-                 fluidPage(
+                 fluidPage(theme = "light",
                    titlePanel("Parent Trust Fund View"),
                    fluidRow(column(
                      width = 3,
@@ -374,7 +371,7 @@ tab.3 <-  tabItem(
       boxPlus(
         plotlyOutput("elpie2",
                      height = "260px"),
-        title = 'Funds Summary',
+        title = 'Portfolio Funds Summary',
         background = "navy",
         enable_label = T,
         label_text = NULL,
@@ -567,7 +564,7 @@ tab.6 <- tabItem(
 
 tab.reports <- tabItem(
   tabName = 'reports',
-  h1("Download Reports"),
+  h1("Download Reports/Data"),
   
   fluidRow(
     column(width=3,
