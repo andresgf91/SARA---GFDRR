@@ -162,7 +162,8 @@ server <- shinyServer(function(input,output,session) {
     output$plot1 <- renderPlotly({
       
       melted_contributions <- active_trustee %>%
-        filter(`Net Paid-In Condribution in USD`!=0) %>% arrange(`Net Signed Condribution in USD`) %>% 
+        filter(`Net Paid-In Condribution in USD`!=0) %>%
+        arrange(`Net Signed Condribution in USD`) %>% 
         select(temp.name,
                `Net Unpaid contribution in USD`,
                `Net Paid-In Condribution in USD`) %>% 
@@ -183,13 +184,13 @@ server <- shinyServer(function(input,output,session) {
                                                    value, sum),
                                            value / 1000000,
                                            fill = variable,
-                                           text = paste0("Trustee: ", temp.name, "\n",
+                                           text = paste0("Parent Fund: ", temp.name, "\n",
                                                          variable, ": ", dollar(value))
                                          )) +
         geom_bar(stat = "identity") +
         theme_classic() +
         labs(y = "Expected Contribution (USD M)",
-             x = "Trustee") +
+             x = "Parent Fund") +
         scale_fill_manual(name=NULL,values = c("#2E2EFE", "#CED8F6", "#56B4E9")) + 
        theme(axis.text.x = element_text(angle = 90, hjust = 1))
       
@@ -218,7 +219,7 @@ server <- shinyServer(function(input,output,session) {
       valueBox(value=tags$p(., style = "font-size: 60%;"),
                icon = icon("money-check-alt"),
                color = "navy",
-               subtitle = "Total Pledged (Across Active Trustees)")
+               subtitle = "Total Pledged (Across Active Parent Funds)")
       })
     
     output$total_received <- renderValueBox({
@@ -321,7 +322,7 @@ server <- shinyServer(function(input,output,session) {
           value=.,
           icon = icon("stopwatch"),
           color="aqua",
-          subtitle = show_grant_button("Trustees closing in less than 12 months ",
+          subtitle = show_grant_button("Parent Funds closing in less than 12 months ",
                                        "show_trustees_12months")
           )
     })
@@ -340,14 +341,17 @@ server <- shinyServer(function(input,output,session) {
         ) %>%
         arrange(months_to_end_disbursement_static) %>%
         rename("Months Left to Disburse" = months_to_end_disbursement_static,
-               "Short Name"= temp.name)
+               "Parent Fund Short Name"= temp.name,
+               "Parent Fund Manager"= `Fund TTL Name`,
+               "Parent Fund #"=Fund,
+               "Parent Fund Balance *"=`Available Balance USD`)
       
       reactive_data$download_table <- data
       
       data <- data %>% 
         mutate(`Net Signed Condribution in USD`= dollar(`Net Signed Condribution in USD`,accuracy = 1),
                `Net Unpaid contribution in USD`= dollar(`Net Unpaid contribution in USD`,accuracy = 1),
-               `Available Balance USD`= dollar(`Available Balance USD`,accuracy = 1),
+               `Parent Fund Balance *`= dollar(`Parent Fund Balance *`,accuracy = 1),
                `Months Left to Disburse`= as.character(`Months Left to Disburse`,digits = 0))
       
   
@@ -355,7 +359,8 @@ server <- shinyServer(function(input,output,session) {
       showModal(modalDialog(size = 'l',
                             title = "Trustees Closing in less than 12 months",
                             renderTable(data),
-                            easyClose = T,footer = downloadBttn('dload_trustees_12months')))
+                            easyClose = T,
+                            footer = list("*Parent Fund Balance does not reflect funds committed but not yet disbursed by GFDRR","   ",downloadBttn('dload_trustees_12months'))))
       
      
     })
@@ -706,7 +711,11 @@ server <- shinyServer(function(input,output,session) {
       active_trustee  %>% 
         select(Fund,`Fund Name`,`Fund TTL Name`,`TF End Disb Date`,Trustee.name) %>% 
         mutate(`TF End Disb Date`= as.character(as_date(`TF End Disb Date`))) %>% 
-        rename("Trustee Short Name"=Trustee.name)
+        rename("Parent Fund Short Name"=Trustee.name,
+               "Parent Fund"= Fund,
+               "Parent Fund Name" = `Fund Name`,
+               "Parent Fund Manager"=`Fund TTL Name`,
+               "End Disb Date"=`TF End Disb Date`)
     },striped = T)
     
     
@@ -833,7 +842,7 @@ server <- shinyServer(function(input,output,session) {
               textinfo='text') %>% 
         layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),margin=m,
-               title = "RETF Funding per Trustee")
+               title = "RETF Funding by Parent Fund")
       
       
     })
@@ -933,19 +942,24 @@ server <- shinyServer(function(input,output,session) {
   
         paste0(paste0(temp_active_trustee$temp.name," (",temp_active_trustee$Fund,")"),collapse ="; " )
       })
-  
+      
       output$fund_balance <- renderValueBox({
-        
         temp_active_trustee <- reactive_active_trustee()
         
-        s_title <- ifelse(nrow(temp_active_trustee)>1,
-                          "Sum of Balance Across Selected Parent Funds",
-                          "Parent Fund Balance")
-        
-        sum(temp_active_trustee$`Available Balance USD`,
-            temp_active_trustee$`Net Unpaid contribution in USD`) %>%
-          dollar %>% 
-          valueBox(subtitle = s_title,value=tags$p(., style = "font-size: 85%;"),color = "blue",icon = icon("money-check-alt"))
+        s_title <- ifelse(
+          nrow(temp_active_trustee) > 1,
+          "Aggregate Balance Across Selected Parent Funds
+          (Does not reflect funds committed but not yet disbursed by GFDRR)",
+          "Parent Fund Balance     (Does not reflect funds committed but not yet disbursed by GFDRR)"
+        )
+        sum(temp_active_trustee$`Available Balance USD`) %>%
+          dollar %>%
+          valueBox(
+            subtitle = s_title,
+            value = tags$p(., style = "font-size: 85%;"),
+            color = "blue",
+            icon = icon("money-check-alt")
+          )
       })
       
       
@@ -953,7 +967,7 @@ server <- shinyServer(function(input,output,session) {
         
         temp_df <- reactive_active_trustee()
         temp_df <- temp_df %>% 
-          summarise("Available for Allocation" = round(sum(`Available Balance USD`)),
+          summarise("Parent Fund Balance" = round(sum(`Available Balance USD`)),
                     "Un-paid" = round(sum(`Net Unpaid contribution in USD`))) %>%
           reshape2::melt()
         
@@ -1057,7 +1071,8 @@ server <- shinyServer(function(input,output,session) {
                   rename("Available Balance" = `Remaining Available Balance`,
                          "Child Fund" = Fund,
                          "TTL Name"=`Fund TTL Name`,
-                         "PO Commitments" = `Commitments USD`)
+                         "PO Commitments" = `Commitments USD`,
+                         "Parent Fund"= `Trustee`)
                 )
         
         reactive_data$download_table <- data
@@ -1466,26 +1481,38 @@ server <- shinyServer(function(input,output,session) {
         
         temp_df <- reactive_df()
         
-        temp_df$temp.name[temp_df$temp.name=="Japan Program Phase I SDTF"] <-"Japan Phase I SDTF"
+        temp_df$temp.name[temp_df$temp.name == "Japan Program Phase I SDTF"] <-
+          "Japan Phase I SDTF"
         
-        temp_df$temp.name[temp_df$temp.name=="Japan Program Phase II SDTF"] <- "Japan Phase II SDTF"
+        temp_df$temp.name[temp_df$temp.name == "Japan Program Phase II SDTF"] <-
+          "Japan Phase II SDTF"
         
-        gg <- temp_df %>% 
+        gg <- temp_df %>%
           group_by(temp.name) %>%
-          summarise(n_grants = n(), total_award_amount = sum(`Grant Amount USD`)) %>%
-          ggplot(aes(x=reorder(temp.name,n_grants),y=n_grants,
-                     text=paste(temp.name,
-                                "\n",
-                                "Number of Grants:",
-                                n_grants,
-                                "\n",
-                                "Total Awards Amount:",
-                                dollar(total_award_amount)))) +
-          geom_col(fill='royalblue') +
+          summarise(n_grants = n(),
+                    total_award_amount = sum(`Grant Amount USD`)) %>%
+          ggplot(aes(
+            x = reorder(temp.name, n_grants),
+            y = n_grants,
+            text = paste(
+              temp.name,
+              "\n",
+              "Number of Grants:",
+              n_grants,
+              "\n",
+              "Total Awards Amount:",
+              dollar(total_award_amount)
+            )
+          )) +
+          geom_col(fill = 'royalblue') +
           theme_classic() +
-         # coord_flip() +
-          labs(x="Trustee Name", y="Number of Grants") +
-          theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
+          # coord_flip() +
+          labs(x = "Parent Fund", y = "Number of Grants") +
+          theme(axis.text.x = element_text(
+            angle = 90,
+            hjust = 1,
+            size = 10
+          ))
         
         m <- list(
           l = 5,
@@ -1695,7 +1722,7 @@ server <- shinyServer(function(input,output,session) {
         
         display_df_funding <- left_join(temp_df_all,display_df_partial,by="temp.name")
         
-        display_df_funding <- display_df_funding %>% rename("Trustee Fund Name" = temp.name)
+        display_df_funding <- display_df_funding %>% rename("Parent Fund Name" = temp.name)
         
         reactive_data$download_region_funding_source_grants_table <-  display_df_funding
         
@@ -1710,7 +1737,7 @@ server <- shinyServer(function(input,output,session) {
               th(colspan = 1, ''),
                th(colspan = 2, 'Non-GPURL')
             ),
-            tr(lapply(c("Trustee",rep(c("# Grants","$ Amount","Available Balance"),3)), th)
+            tr(lapply(c("Parent Fund",rep(c("# Grants","$ Amount","Available Balance"),3)), th)
             )
           )
         ))
