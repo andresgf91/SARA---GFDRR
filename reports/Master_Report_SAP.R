@@ -21,37 +21,42 @@ data <- report_grants %>% filter(PMA=='no')
 
 region <- 'ALL regions'
 
-funding_sources <- active_trustee$temp.name %>% #changeeeeee!
+funding_sources <- active_trustee$temp.name %>% 
   unique() %>%
   paste(sep = "",collapse= "; ")
 
-current_trustee_subset_collapsed <- sort(current_trustee_subset$temp.name)%>% #changeeeeee!
+current_trustee_subset_collapsed <- sort(current_trustee_subset$temp.name)%>% 
   unique() %>%
   paste(sep = "",collapse= "; ")
 
 df_treatment <- function(Data=data){
   
-df <- Data %>%  select(`Closing FY`,`Trustee #`, 
-                     `Child Fund #`,
-                     `Project ID`,
-                     `Child Fund Name`,
-                     `Child Fund Status`,
-                     `Execution Type`,
-                     `Child Fund TTL Name`,
-                     `Managing Unit`,
-                     `Lead GP/Global Theme`,
-                     Country,
-                     `Region Name`,
-                     `Activation Date`,
-                     `Closing Date`,
-                     `Grant Amount`,
-                     `Cumulative Disbursements`,
-                     `PO Commitments`,
-                     `Remaining Available Balance`,
-                     `Months to Closing Date`,
-                     `Required Monthly Disbursement Rate`,
-                     `Disbursement Risk Level`,
-                     `Trustee Fund Name`)
+  df <- Data %>%
+    select(
+      `Closing FY`,
+      `Trustee #`,
+      `Trustee Fund Name`,
+      `Child Fund #`,
+      `Project ID`,
+      `Child Fund Name`,
+      `Child Fund Status`,
+      `Execution Type`,
+      `Child Fund TTL Name`,
+      `Managing Unit`,
+      `Lead GP/Global Theme`,
+      Country,
+      `Region Name`,
+      `Activation Date`,
+      `Closing Date`,
+      `Grant Amount`,
+      `Cumulative Disbursements`,
+      `2020 Disbursements`,
+      `PO Commitments`,
+      `Remaining Available Balance`,
+      `Months to Closing Date`,
+      `Required Monthly Disbursement Rate`,
+      `Disbursement Risk Level`
+    )
 
 df$`Uncommitted Balance (Percent)` <- df$`Remaining Available Balance`/df$`Grant Amount`
 
@@ -90,7 +95,7 @@ df <- df %>% select(-funding_sources)
 
 
 
-rm(wb)
+#rm(wb)
 wb <- createWorkbook()
 
 
@@ -321,14 +326,17 @@ writeData(wb,1,legend_text,16,3)
 
 RISK.df.row <- 10
 
-excel_df <- df %>% rename("TTL Name"=`Child Fund TTL Name`,
-                          "Available Balance (Uncommitted)"= `Uncommitted Balance`) %>% 
+excel_df <- df %>% rename("TTL Name" = `Child Fund TTL Name`,
+                          "Available Balance (Uncommitted)" = `Uncommitted Balance`) %>%
   select(-c(`Uncommitted Balance (Percent)`,
-            `Grace Period`,
-            GPURL_binary)) %>% 
-  mutate(`Required Monthly Disbursement Rate` = ifelse(`Required Monthly Disbursement Rate`==999,
-                                                       NA,
-                                                       round(`Required Monthly Disbursement Rate`, digits = 2)))
+            `Grace Period`)) %>%
+  mutate(
+    `Required Monthly Disbursement Rate` = ifelse(
+      `Required Monthly Disbursement Rate` == 999,
+      NA,
+      round(`Required Monthly Disbursement Rate`, digits = 2)
+    )
+  )
 
 writeDataTable(wb,1,excel_df,
                       startRow = RISK.df.row,
@@ -386,13 +394,14 @@ addStyle(wb,1,rows=RISK.df.row,cols=1:(length(df)),style = header_style)
 number_format_range <- RISK.df.row:(nrow(df)+RISK.df.row)
 
 #addStyle(wb,1,rows=number_format_range,cols=12,style = date_format,stack = TRUE)
-addStyle(wb,1,rows=number_format_range,cols=13,style = date_format,stack = TRUE)
 addStyle(wb,1,rows=number_format_range,cols=14,style = date_format,stack = TRUE)
-addStyle(wb,1,rows=number_format_range,cols=15,style = dollar_format,stack = TRUE)
+addStyle(wb,1,rows=number_format_range,cols=15,style = date_format,stack = TRUE)
 addStyle(wb,1,rows=number_format_range,cols=16,style = dollar_format,stack = TRUE)
 addStyle(wb,1,rows=number_format_range,cols=17,style = dollar_format,stack = TRUE)
 addStyle(wb,1,rows=number_format_range,cols=18,style = dollar_format,stack = TRUE)
-addStyle(wb,1,rows=number_format_range,cols=20,style = percent_format,stack = TRUE)
+addStyle(wb,1,rows=number_format_range,cols=19,style = dollar_format,stack = TRUE)
+addStyle(wb,1,rows=number_format_range,cols=20,style = dollar_format,stack = TRUE)
+addStyle(wb,1,rows=number_format_range,cols=22,style = percent_format,stack = TRUE)
 #addStyle(wb,1,rows=number_format_range,cols=22,style = percent_format,stack = TRUE)
 #addStyle(wb,1,rows=number_format_range,cols=23,style = percent_format,stack = TRUE)
 
@@ -403,21 +412,21 @@ addStyle(wb,1,rows = 8,cols = 1,style = wrapped_text,stack = TRUE)
 addStyle(wb,1,rows = 10,cols = 1:length(df),style = wrapped_text,stack = TRUE)
 setColWidths(wb,1, cols=3, widths = 17)
 setColWidths(wb,1, cols=4, widths = 17)
-setColWidths(wb,1, cols=5, widths = 20) #child fund name
-setColWidths(wb,1, cols=6, widths = 9)
-setColWidths(wb,1, cols=9, widths = 13)
-setColWidths(wb,1, cols=10, widths = 10)
-setColWidths(wb,1, cols=11, widths = 13)
-setColWidths(wb,1, cols=12, widths = 15)
+setColWidths(wb,1, cols=6, widths = 20) #child fund name
+setColWidths(wb,1, cols=7, widths = 9)
+setColWidths(wb,1, cols=10, widths = 17)
+setColWidths(wb,1, cols=11, widths = 17)
+setColWidths(wb,1, cols=12, widths = 13)
 setColWidths(wb,1, cols=13, widths = 15)
-setColWidths(wb,1, cols=15, widths = 14)
-setColWidths(wb,1, cols=16, widths = 40)
+setColWidths(wb,1, cols=14, widths = 15)
+setColWidths(wb,1, cols=16, widths = 14)
 setColWidths(wb,1, cols=17, widths = 15)
-setColWidths(wb,1, cols=18, widths = 20)
-setColWidths(wb,1, cols=19, widths = 8)
-setColWidths(wb,1, cols=20, widths = 13)
-setColWidths(wb,1, cols=21, widths = 19)
-setColWidths(wb,1, cols=22, widths = 30)
+setColWidths(wb,1, cols=18, widths = 15)
+setColWidths(wb,1, cols=19, widths = 15)
+setColWidths(wb,1, cols=20, widths = 15)
+setColWidths(wb,1, cols=21, widths = 15)
+setColWidths(wb,1, cols=22, widths = 15)
+setColWidths(wb,1, cols=23, widths = 15)
 
 
 

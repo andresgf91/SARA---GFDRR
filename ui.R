@@ -567,14 +567,15 @@ tab.reports <- tabItem(
   h1("Download Reports/Data"),
   
   fluidRow(
-    column(width=3,
+    column(width=2,
            selectInput(inputId = "report_type",label=NULL,
                        choices= c("Summary Report",
                                   "Disbursement Risk Report",
+                                  "Pivot Report (Draft Version)",
                                   "Master Report",
                                   "Source Data"),
                        selectize=TRUE)),
-    column(width=4,
+    column(width=5,
            conditionalPanel(
              condition = "input.report_type == 'Summary Report'",
              boxPad(color = 'blue',
@@ -620,6 +621,46 @@ tab.reports <- tabItem(
                                 selectize = T,
                                 selected =  sort(unique(grants$temp.name)))
              )
+           ),
+           conditionalPanel(
+             condition = "input.report_type == 'Pivot Report (Draft Version)'",
+             boxPad(color = 'blue',
+                    selectInput(inputId = "pivot_fund_status",width = '100%',
+                                label="Child Fund Status:",
+                                choices= c("ACTV","PEND"),
+                                multiple = T,
+                                selectize = T,
+                                selected =  c("ACTV","PEND")),
+                    selectInput(inputId = "pivot_region",width = '100%',
+                                label="Region Name(s):",
+                                choices= sort(unique(grants$Region)),
+                                multiple = T,
+                                selectize = T,
+                                selected =  sort(unique(grants$Region))),
+                    selectInput(inputId = "pivot_trustee",width = '100%',
+                                label="Trustee(s):",
+                                choices= sort(unique(grants$temp.name)),
+                                multiple = T,
+                                selectize = T,
+                                selected =  sort(unique(grants$temp.name))),
+                    selectInput(inputId = "pivot_exec_type",width = '100%',
+                                label="Execution Type:",
+                                choices= sort(unique(grants$`DF Execution Type`)),
+                                multiple = T,
+                                selectize = T,
+                                selected =  sort(unique(grants$`DF Execution Type`))),
+                    selectInput(inputId = "pivot_GPURL_binary",width = '100%',
+                                label="GPURL Binary",
+                                choices= sort(unique(grants$GPURL_binary)),
+                                multiple = T,
+                                selectize = T,
+                                selected =  sort(unique(grants$GPURL_binary))),
+                    selectInput(inputId = "pivot_GP",width = '100%',
+                                label="Lead GP/Global Themes",
+                                choices= sort(unique(grants$`Lead GP/Global Themes`)),
+                                multiple = T,
+                                selectize = T,
+                                selected =  sort(unique(grants$`Lead GP/Global Themes`)))
            )
     ),
     conditionalPanel(condition = "input.report_type == 'Summary Report'",
@@ -631,13 +672,15 @@ tab.reports <- tabItem(
     conditionalPanel(condition = "input.report_type == 'Master Report'",
                      downloadButton("Download_master_report.xlsx",
                                     label = 'Download Report')),
-    
+    conditionalPanel(condition = "input.report_type == 'Pivot Report (Draft Version)'",
+                     downloadButton("Download_pivot_report.xlsx",
+                                    label = 'Download Report')),
     conditionalPanel(condition = "input.report_type == 'Source Data'",
                      downloadButton("Download_source_data.xlsx",
                                     label = 'Download Data'))
   )
 )
-
+)
 
 ## BODY ---------------
 Body <- dashboardBody(

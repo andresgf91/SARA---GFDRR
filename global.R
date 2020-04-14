@@ -3,6 +3,8 @@ library(readxl)
 library(dplyr)
 library(stringi)
 library(lubridate)
+library(pivottabler)
+library(stringr)
 
 options(scipen = 999)
 # READ IN DATA ------------------------------------------------------------
@@ -433,6 +435,14 @@ report_grants <- grants %>%
     `TTL Unit` = as.character(`TTL Unit`),
     `Window #` = as.numeric(`Window #`)
   )
+
+
+report_grants$`Disbursement Risk Level` <- factor(report_grants$`Disbursement Risk Level` ,
+                                         levels = c( "Very High Risk",
+                                                     "High Risk",
+                                                     "Medium Risk",
+                                                     "Low Risk",
+                                                     "Closed (Grace Period)"))
 
 
 #report_grants <- report_grants %>% filter(`Child Fund #`!="TF0B2168")
