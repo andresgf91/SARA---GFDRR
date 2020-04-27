@@ -21,7 +21,7 @@ library(openxlsx)
 
 # Define server logic required to draw a histogram
 server <- shinyServer(function(input,output,session) {
-  
+
   show_grant_button <-  function(title, id_name) {
     HTML(
       paste0(
@@ -34,9 +34,40 @@ server <- shinyServer(function(input,output,session) {
       )
   ) 
   }
+  reactive_data <- reactiveValues(focal_grants = grants,
+                                  percent_df = NA,
+                                  region_grants = grants,
+                                  download_table=NA, 
+                                  status = 'closed')
+  
+  observeEvent(input$opensidebar.1, {
+    
+    if (reactive_data$status == "open"){
+    shinyjs::removeClass(selector = "body", class = "control-sidebar-open")
+      reactive_data$status <- 'closed'}
+      else{
+    shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+        reactive_data$status <- "open"
+    }
+  })
+  
+  output$caption.1 <- renderText("The global overview Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ....")
+  output$caption.2 <- renderText("The Parent Trust Fund View Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ....")
+  output$caption.3 <- renderText("The Grant Portfolio View Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  ....")
+  output$caption.4 <- renderText("The Additional Informatio Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  ....")
+  output$caption.5 <- renderText("In the Report and Data Download  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  ....")
   
   
-  
+  observeEvent(input$opensidebar.2, {
+    
+    if (reactive_data$status == "open"){
+      shinyjs::removeClass(selector = "body", class = "control-sidebar-open")
+      reactive_data$status <- 'closed'}
+    else{
+      shinyjs::addClass(selector = "body", class = "control-sidebar-open")
+      reactive_data$status <- "open"
+    }
+  })
   # Interactive Rigth Side-Bar 
   observe({
     if (req(input$nav) == "parent_tf"){
@@ -89,7 +120,7 @@ server <- shinyServer(function(input,output,session) {
       output$side_bar <- renderUI({
         rightSidebarTabContent(title = "Edit View",
           id = 2,
-          icon="gears",
+          icon="funnel",
           active = TRUE,
           checkboxGroupButtons(
             'focal_select_region',
@@ -235,7 +266,7 @@ server <- shinyServer(function(input,output,session) {
       dollar(accuracy = 1) %>% 
         valueBox(
           value= tags$p(., style = "font-size: 60%;"), icon = icon("file-invoice-dollar"),
-          color = "light-blue", subtitle = "Total Pending (Un-paid)")
+          color = "light-blue", subtitle = "Total Pending (Un-paid)") 
       
       })
     
@@ -313,6 +344,9 @@ server <- shinyServer(function(input,output,session) {
         valueBox(value=., icon = icon("receipt"),
           color = "blue", subtitle =  "Available Balance")
       })
+    
+    
+   
     
     output$`closing<12` <- renderValueBox({
       
@@ -707,6 +741,13 @@ server <- shinyServer(function(input,output,session) {
     
     
 # TAB.1.3 -------------
+    output$glossary_1 <- renderTable({
+   glossary
+    },striped = T)
+    
+    
+    
+    
     output$trustee_name_TTL <- renderTable({
       active_trustee  %>% 
         select(Fund,`Fund Name`,`Fund TTL Name`,`TF End Disb Date`,Trustee.name) %>% 
@@ -763,120 +804,121 @@ server <- shinyServer(function(input,output,session) {
     })
   
     
-    output$RETF_n_grants_A <- renderValueBox({
-      
-      temp_df <- grants %>% filter(`DF Execution Type`=="RE")
-      temp_df %>% nrow() %>%
-        valueBox(value=.,
-                 subtitle =HTML("<b>Active RETF grants</b> <button id=\"show_grants_RETF_A\" type=\"button\" class=\"btn btn-default action-button\">Show Grants</button>"),
-                 color="blue")
-      
-    })
+    # output$RETF_n_grants_A <- renderValueBox({
+    #   
+    #   temp_df <- grants %>% filter(`DF Execution Type`=="RE")
+    #   temp_df %>% nrow() %>%
+    #     valueBox(value=.,
+    #              subtitle =HTML("<b>Active RETF grants</b> <button id=\"show_grants_RETF_A\" type=\"button\" class=\"btn btn-default action-button\">Show Grants</button>"),
+    #              color="blue")
+    #   
+    # })
     
     
-    observeEvent(input$show_grants_RETF_A, {
-      data <- grants %>% filter(`DF Execution Type`=="RE")
-      isolate(data <- data %>% filter(`Grant Amount USD` != 0) %>%
-                select(Fund,
-                       `Fund Name`,
-                       `Grant Amount USD`,
-                       temp.name,
-                       `Fund TTL Name`,
-                       `TTL Unit Name`,
-                       tf_age_months,
-                       `Months to Closing Date`) %>%
-                arrange(-tf_age_months) %>%
-                mutate(`Grant Amount USD` = dollar(`Grant Amount USD`)) %>%
-                rename("Months to Closing Date" = `Months to Closing Date`,
-                       "Months Since Grant Activation"= tf_age_months,
-                       "Trustee"= temp.name))
-      
-      showModal(modalDialog(size = 'l',
-                            title = "BETF grants",
-                            renderTable(data),
-                            easyClose = TRUE))
-      
-    })
+    # observeEvent(input$show_grants_RETF_A, {
+    #   data <- grants %>% filter(`DF Execution Type`=="RE")
+    #   isolate(data <- data %>% filter(`Grant Amount USD` != 0) %>%
+    #             select(Fund,
+    #                    `Fund Name`,
+    #                    `Grant Amount USD`,
+    #                    temp.name,
+    #                    `Fund TTL Name`,
+    #                    `TTL Unit Name`,
+    #                    tf_age_months,
+    #                    `Months to Closing Date`) %>%
+    #             arrange(-tf_age_months) %>%
+    #             mutate(`Grant Amount USD` = dollar(`Grant Amount USD`)) %>%
+    #             rename("Months to Closing Date" = `Months to Closing Date`,
+    #                    "Months Since Grant Activation"= tf_age_months,
+    #                    "Trustee"= temp.name))
+    #   
+    #   showModal(modalDialog(size = 'l',
+    #                         title = "BETF grants",
+    #                         renderTable(data),
+    #                         easyClose = TRUE))
+    #   
+    # })
     
-    output$`RETF_$_grants_A` <- renderValueBox({
-      
-      temp_df <- grants %>% filter(`DF Execution Type`=="RE")
-      sum(temp_df$`Grant Amount USD`) %>% dollar() %>% 
-        valueBox(value=.,
-                 subtitle = "Active RETF funds amount",
-                 color="blue")
-      
-    })
+    # output$`RETF_$_grants_A` <- renderValueBox({
+    #   
+    #   temp_df <- grants %>% filter(`DF Execution Type`=="RE")
+    #   sum(temp_df$`Grant Amount USD`) %>% dollar() %>% 
+    #     valueBox(value=.,
+    #              subtitle = "Active RETF funds amount",
+    #              color="blue")
+    #   
+    # })
     
     
-    output$RETF_trustees_A_pie <- renderPlotly({
-      
-      remove_num <- function(x){
-        word <- x
-        letter <- stri_sub(x,5)
-        if(letter %in% c("1","2","3","4","5","6","7","8","9")){
-          return(stri_sub(x,1,4))} else{
-            return(stri_sub(word))
-          }
-      }
-      
-      temp_df <- grants %>% filter(`DF Execution Type`=="RE")
-      
-      #temp_df$aggregate_unit <- sapply(temp_df$`TTL Unit Name`, function(x) remove_num(x)) %>% as.vector()
-      data <- temp_df %>% 
-        group_by(temp.name) %>% 
-        summarise(n_grants = n(), total_award_amount = sum(`Grant Amount USD`))
-      
-      total <- sum(data$total_award_amount)
-      m <- list(
-        l = 40,
-        r = 20,
-        b = 70,
-        t = 50,
-        pad = 4
-      )
-      plot_ly(data, labels = ~temp.name, values = ~total_award_amount, type = 'pie',
-              text=~paste0(round(total_award_amount/total*100,digits=1)," %",
-                           "\n","(",n_grants," grants)"),
-              hoverinfo="label+value+text",
-              textinfo='text') %>% 
-        layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-               yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),margin=m,
-               title = "RETF Funding by Parent Fund")
-      
-      
-    })
     
-    output$RETF_region_A_pie <- renderPlotly({
+    # output$RETF_trustees_A_pie <- renderPlotly({
+    #   
+    #   remove_num <- function(x){
+    #     word <- x
+    #     letter <- stri_sub(x,5)
+    #     if(letter %in% c("1","2","3","4","5","6","7","8","9")){
+    #       return(stri_sub(x,1,4))} else{
+    #         return(stri_sub(word))
+    #       }
+    #   }
       
-      temp_df <- grants %>% filter(`DF Execution Type`=="RE")
-      
-      m <- list(
-        l = 100,
-        r = 40,
-        b = 70,
-        t = 50,
-        pad = 4
-      )
-      
-      data <- temp_df %>% 
-        group_by(Region) %>% 
-        summarise(n_grants = n(), total_award_amount = sum(`Grant Amount USD`), r_color=unique(region_color))
-      
-      total <- sum(data$total_award_amount)
-      
-      plot_ly(data, labels = ~Region, values = ~total_award_amount, type = 'pie',
-              text=~paste0(round(total_award_amount/total*100,digits=1)," %",
-                           "\n","(",n_grants," grants)"),
-              hoverinfo="label+value+text",
-              textinfo='text',
-              marker=~list(colors=r_color)) %>%
-        layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-               yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-               title = "RETF Funding per Region",margin=m)
-      
-      
-    })
+    #   temp_df <- grants %>% filter(`DF Execution Type`=="RE")
+    #   
+    #   #temp_df$aggregate_unit <- sapply(temp_df$`TTL Unit Name`, function(x) remove_num(x)) %>% as.vector()
+    #   data <- temp_df %>% 
+    #     group_by(temp.name) %>% 
+    #     summarise(n_grants = n(), total_award_amount = sum(`Grant Amount USD`))
+    #   
+    #   total <- sum(data$total_award_amount)
+    #   m <- list(
+    #     l = 40,
+    #     r = 20,
+    #     b = 70,
+    #     t = 50,
+    #     pad = 4
+    #   )
+    #   plot_ly(data, labels = ~temp.name, values = ~total_award_amount, type = 'pie',
+    #           text=~paste0(round(total_award_amount/total*100,digits=1)," %",
+    #                        "\n","(",n_grants," grants)"),
+    #           hoverinfo="label+value+text",
+    #           textinfo='text') %>% 
+    #     layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+    #            yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),margin=m,
+    #            title = "RETF Funding by Parent Fund")
+    #   
+    #   
+    # })
+    
+    # output$RETF_region_A_pie <- renderPlotly({
+    #   
+    #   temp_df <- grants %>% filter(`DF Execution Type`=="RE")
+    #   
+    #   m <- list(
+    #     l = 100,
+    #     r = 40,
+    #     b = 70,
+    #     t = 50,
+    #     pad = 4
+    #   )
+    #   
+    #   data <- temp_df %>% 
+    #     group_by(Region) %>% 
+    #     summarise(n_grants = n(), total_award_amount = sum(`Grant Amount USD`), r_color=unique(region_color))
+    #   
+    #   total <- sum(data$total_award_amount)
+    #   
+    #   plot_ly(data, labels = ~Region, values = ~total_award_amount, type = 'pie',
+    #           text=~paste0(round(total_award_amount/total*100,digits=1)," %",
+    #                        "\n","(",n_grants," grants)"),
+    #           hoverinfo="label+value+text",
+    #           textinfo='text',
+    #           marker=~list(colors=r_color)) %>%
+    #     layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+    #            yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+    #            title = "RETF Funding per Region",margin=m)
+    #   
+    #   
+    # })
     
 # TAB.2 -------------------------------------------------------------------
 
@@ -1359,10 +1401,7 @@ server <- shinyServer(function(input,output,session) {
       data
       })
     
-    reactive_data <- reactiveValues(focal_grants = grants,
-                                    percent_df = NA,
-                                    region_grants = grants,
-                                    download_table=NA)
+
   
     observeEvent(input$focal_select_region,{
      df <- grants %>%
@@ -4261,6 +4300,8 @@ server <- shinyServer(function(input,output,session) {
                            detail="this may take a minute or two",{
                              openxlsx::saveWorkbook({
                                
+                              current_trustee_subset <- c("TF072236","TF072584", "TF072129","TF071630")
+                               
                                data <- report_grants
                                
                                data <-
@@ -4712,7 +4753,7 @@ server <- shinyServer(function(input,output,session) {
                                        %in% c("Total", unique(data$`Region Name`))
                                      )) + start_row
                                    
-                                   
+                                   rangez <- list()
                                    var <- cond_rows[1]
                                    rangez[[1]] <- (cond_rows[1])
                                    temp_count <- 1
@@ -4834,7 +4875,7 @@ server <- shinyServer(function(input,output,session) {
         
         
         
-        
+        waiter_hide() # hide the waiter
         
         
 }) #END OF ALL CODE (SERVER FUNCTION)

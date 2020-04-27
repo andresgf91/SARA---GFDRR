@@ -28,6 +28,9 @@ library(streamgraph)
 library(DT)
 library(shinythemes)
 library(shinyjs)
+library(waiter)
+library(bsplus)
+library(tippy)
 
 # BUILD USER INTERFACE ----------------------------------------------------
 
@@ -35,15 +38,21 @@ library(shinyjs)
 Header <- dashboardHeaderPlus(
   title =
     tagList(
-      span(class = "logo-lg", 'SARA'),
-      span(class = "logo-mini", "SARA ")
+      span(class = "logo-lg", 'Menu'),
+      span(class = "logo-mini", "Menu")
     )
   ,
   dropdownMenuOutput("date_data_updated_message"),
   # disable = F,
   enable_rightsidebar = TRUE,
-  rightSidebarIcon = "gears",
+  rightSidebarIcon = "filter",
   left_menu =  tagList(
+    img(
+      class = "logo-lg",
+      src = 'SARA Logo_canva_black.png',
+      height = '45',
+      width = '190'
+    ),
     img(
       class = "logo-lg",
       src = 'GFDRR_BW_logo.png',
@@ -69,14 +78,14 @@ info <- menuItem("Additional Information",
 parent_trust_fund_view <-   menuItem(
   "Parent Trust Fund",
   tabName = "parent_tf",
-  icon = icon("funnel-dollar"),
+  icon = icon("university"),
   selected = F
 )
 
 regions_view <-  menuItem(
   "Grant Portfolio",
   tabName = "regions",
-  icon = icon("search-plus"),
+  icon = icon("briefcase"),
   selected = F
 )
 
@@ -117,40 +126,34 @@ Sidebar <- dashboardSidebar(
 tab.1 <-  tabItem(tabName = "overview",
                     theme = shinytheme("readable"),
                      titlePanel('Global Overview'),
+                  panel(textOutput("caption.1")),
                     fluidRow(
                       column(
                         width = 2,
-                        # boxPlus(title=textOutput("pledged"),
-                        #         paste(" Total Pledged (Across Active Parent Funds)","                              ."),
-                        #         width = NULL,
-                        #         status = "navy",
-                        #         background = "navy",
-                        #         closable = F,
-                        #         collapsible = T,
-                        #         height = 150,
-                        #         enable_sidebar = T,
-                        #         sidebar_content = "text bla bababab baBABAB ABBABA ",
-                        #         sidebar_width = 100),
-                        valueBoxOutput("total_contributions", width = NULL),
-                        valueBoxOutput("total_received", width = NULL),
-                        valueBoxOutput("total_unpaid", width = NULL),
+                        tags$div(title="This is an example of how we could add text to the different elements in the dashboard",
+                                 valueBoxOutput("total_contributions", width = NULL)),
+                      valueBoxOutput("total_received", width = NULL) %>% 
+                        bs_embed_tooltip(title = "Example of where we could add text to explain the Indicators", placement = 'right'), 
+                        valueBoxOutput("total_unpaid", width = NULL) %>% 
+                        bs_embed_tooltip(title = "Testtt222"),
                         valueBoxOutput("total_active_portfolio", width = NULL),
                         valueBoxOutput("total_uncommitted_balance", width = NULL),
-                        valueBoxOutput("closing<12", width = NULL)
-                      ),
+                        valueBoxOutput("closing<12", width = NULL)),
                       column(
                         width = 4,
                        
-                        boxPlus(
+                        boxPlus(id="myid",
                           plotlyOutput("funding_region", height = "260px"),
-                                title='Funding by Region',
+                                title=tippy('Funding by Region',"this is tippy"),
                                 background = "blue",
                                 enable_label = T,
-                                label_text = NULL,
+                                label_text = tippy("i","This is an example of how we could add more information to the graphs so the user understand what it represents",width = '90',height = '120px'),
                                 width = NULL,
                                 collapsible = TRUE,
                                 closable = F,
-                                collapsed = F),
+                                collapsed = F,
+                          enable_dropdown = F),
+                        tippy_this("myid", "Tooltip",placement='right'),
                         boxPlus(
                           plotlyOutput("funding_GP", height = "260px"),
                                 title='Funding by Global Practice',
@@ -208,35 +211,52 @@ tab.1 <-  tabItem(tabName = "overview",
 # tab 1.3 (additional info)------
 tab.1.3 <-  tabItem(tabName = "admin_info",
                       titlePanel('Additional Information'),
+                    panel(textOutput("caption.4")),
+                    
                       tabsetPanel(
                         type = 'pills',
+                        tabPanel("Glossary",
+                                 tableOutput("glossary_1")),
                         tabPanel("Parent Fund Info",
                                  tableOutput("trustee_name_TTL")),
                         tabPanel(
                           "Donor Contributions",
                           tableOutput("donor_contributions"),
                           plotlyOutput("donor_contributions_GG")
-                        ),
-                        tabPanel(
-                          title = "RETF grants overview",
-                          fluidRow(
-                            valueBoxOutput("RETF_n_grants_A"),
-                            valueBoxOutput("RETF_$_grants_A")
-                          ),
-                          fluidPage(tabsetPanel(
-                            tabPanel(title = "Trustees",
-                                     plotlyOutput("RETF_trustees_A_pie", height = 450)),
-                            tabPanel(title = "Regions",
-                                     plotlyOutput("RETF_region_A_pie",height = 450))
-                          ))
-                        )
+                        )#,
+                        #tabPanel(
+                         # title = "RETF grants overview",
+                          #fluidRow(
+                           # valueBoxOutput("RETF_n_grants_A"),
+                            #valueBoxOutput("RETF_$_grants_A")
+                          #),
+                          #fluidPage(tabsetPanel(
+                           # tabPanel(title = "Trustees",
+                            #         plotlyOutput("RETF_trustees_A_pie", height = 450)),
+                            #tabPanel(title = "Regions",
+                             #        plotlyOutput("RETF_region_A_pie",height = 450))
+                         # ))
+                       # )
                       )
                     )
 
 ## tab.2 (Parent Trustfund View) ----------------------
 tab.2 <- tabItem(tabName = "parent_tf",
-                 fluidPage(theme = "light",
-                   titlePanel("Parent Trust Fund View"),
+                 fluidPage(use_waiter(),
+                           waiter_show_on_load(),
+                   theme = "light",
+                   fluidRow(
+                     column(width=10,
+                            titlePanel("Parent Trust Fund View")),
+                     column(width=2,
+                            actionBttn('opensidebar.1',
+                                       "Click to filter current view",
+                                       size='sm',
+                                       icon=icon("filter")))),
+                   panel(textOutput("caption.2")),
+                   tabsetPanel(
+                   tabPanel("Main View",  
+                   
                    fluidRow(column(
                      width = 3,
                      boxPlus(
@@ -321,7 +341,8 @@ tab.2 <- tabItem(tabName = "parent_tf",
                          closable = F
                        )
                      )
-                   ),
+                   )),
+                   tabPanel("Table View",
                    fluidRow(
                      boxPlus(
                        dataTableOutput("trustee_countries_DT"),
@@ -336,6 +357,7 @@ tab.2 <- tabItem(tabName = "parent_tf",
                        footer = downloadBttn('Dload_country_summary_table')
                      )
                      
+                   ))
                    )
                  ))
 
@@ -350,7 +372,17 @@ tab.2 <- tabItem(tabName = "parent_tf",
 tab.3 <-  tabItem(
   tabName = "regions",
   class = 'active',
-  titlePanel("Grant Portfolio"),
+  fluidRow(
+    column(width=10,
+           titlePanel("Grant Portfolio")),
+    column(width=2,
+           actionBttn('opensidebar.2',
+                      "Click to filter current view",
+                      size='sm',
+                      icon=icon("filter")))),
+  panel(textOutput("caption.3")),
+  tabsetPanel(
+    tabPanel("Main View",
   fluidRow(
     column(
       width = 3,
@@ -417,7 +449,8 @@ tab.3 <-  tabItem(
         closable = F,
         collapsed = F
       )
-    )),
+    )))),
+  tabPanel("Table View",
     fluidRow(
       boxPlus(
         solidHeader = T,
@@ -429,7 +462,7 @@ tab.3 <-  tabItem(
         width = 12,
         collapsible = TRUE,
         closable = F,
-        collapsed = T,
+        collapsed = F,
         footer = downloadBttn('Dload_region_summary_grants_table')
       ) ,
       boxPlus(
@@ -442,10 +475,10 @@ tab.3 <-  tabItem(
         width = 12,
         collapsible = TRUE,
         closable = F,
-        collapsed = T,
+        collapsed = F,
         footer = downloadBttn('Dload_region_countries_grants_table')
       ) ,
-      boxPlus(
+     boxPlus(
         solidHeader = T,
         DT::dataTableOutput(outputId = "region_funding_source_grants_table"),
         title = 'Funding source table',
@@ -455,9 +488,10 @@ tab.3 <-  tabItem(
         width = 12,
         collapsible = TRUE,
         closable = F,
-        collapsed = T,
+        collapsed = F,
         footer = downloadBttn('Dload_region_funding_source_grants_table')
       )
+    )
     )
     
   )
@@ -565,7 +599,7 @@ tab.6 <- tabItem(
 tab.reports <- tabItem(
   tabName = 'reports',
   h1("Download Reports/Data"),
-  
+  panel(textOutput("caption.5")),
   fluidRow(
     column(width=2,
            selectInput(inputId = "report_type",label=NULL,
@@ -706,61 +740,65 @@ font-style: italic;
 
 }
 
+
+
   '))),
 tabItems(tab.1,tab.3,tab.2,tab.1.3,tab.reports))
 #tab.2,tab.3,PMA.tab,tab.1.3,tab.5,tab.6))
 
 # RAY OF SUNSHINE --------------
-ray.of.sunshine <- rightSidebar(
-  background = "dark",
-  rightSidebarTabContent(
-    id= 1,
-    icon="desktop",
-    active=TRUE,
-    title= "Tab 1",
-    selectInput('select_trustee',"Selected trustee:",
-                choices = sort(unique(active_trustee$temp.name)))
-  ),
-  rightSidebarTabContent(
-    id = 2,icon="gears",
-    selectInput(
-      'focal_select_region',
-      "Selected Region(s):",
-      choices = sort(unique(grants$Region)),
-      multiple = TRUE,
-      selectize = TRUE,
-      selected = sort(unique(grants$Region))
-    ),
-    selectInput(
-      'focal_select_trustee',
-      "Select a Trustee",
-      choices = c("All" = "", sort(unique(grants$temp.name))),
-      multiple = TRUE,
-      selectize = TRUE,
-      selected = unique(grants$temp.name),
-      width = NULL
-    ),
-    selectInput(
-      "region_BE_RE",
-      "Selected Grant Exc. Types:",
-      choices = unique(grants$`DF Execution Type`),
-      multiple = T,
-      selectize = T,
-      selected = unique(grants$`DF Execution Type`)
-    ),
-    selectInput(
-      "region_PMA_or_not",
-      "Select Grant Types",
-      choices = unique(grants$PMA.2),
-      multiple = T,
-      selectize = T,
-      selected = unique(grants$PMA.2)
-  )
-)
-)
+# ray.of.sunshine <- rightSidebar(
+#   background = "dark",
+#   rightSidebarTabContent(
+#     id= 1,
+#     icon="desktop",
+#     active=TRUE,
+#     title= "Tab 1",
+#     selectInput('select_trustee',"Selected trustee:",
+#                 choices = sort(unique(active_trustee$temp.name)))
+#   ),
+#   rightSidebarTabContent(
+#     id = 2,icon="gears",
+#     selectInput(
+#       'focal_select_region',
+#       "Selected Region(s):",
+#       choices = sort(unique(grants$Region)),
+#       multiple = TRUE,
+#       selectize = TRUE,
+#       selected = sort(unique(grants$Region))
+#     ),
+#     selectInput(
+#       'focal_select_trustee',
+#       "Select a Trustee",
+#       choices = c("All" = "", sort(unique(grants$temp.name))),
+#       multiple = TRUE,
+#       selectize = TRUE,
+#       selected = unique(grants$temp.name),
+#       width = NULL
+#     ),
+#     selectInput(
+#       "region_BE_RE",
+#       "Selected Grant Exc. Types:",
+#       choices = unique(grants$`DF Execution Type`),
+#       multiple = T,
+#       selectize = T,
+#       selected = unique(grants$`DF Execution Type`)
+#     ),
+#     selectInput(
+#       "region_PMA_or_not",
+#       "Select Grant Types",
+#       choices = unique(grants$PMA.2),
+#       multiple = T,
+#       selectize = T,
+#       selected = unique(grants$PMA.2)
+#   )
+# )
+# )
+
 
 # UI ------
-ui <- dashboardPagePlus(collapse_sidebar = T,
+ui <- dashboardPagePlus(title = "SARA-BETA Version",
+                        collapse_sidebar = T,
                         useShinyjs(),
                         header = Header,
                         sidebar = Sidebar,

@@ -5,6 +5,7 @@ library(stringi)
 library(lubridate)
 library(pivottabler)
 library(stringr)
+library(googlesheets4)
 
 options(scipen = 999)
 # READ IN DATA ------------------------------------------------------------
@@ -29,6 +30,13 @@ fp_raw_data <- read_xlsx(path = "data/FP_GFDRR Raw Data 3_4_2020.xlsx",sheet = 2
 recode_trustee <- read_xlsx('data/recodes.xlsx',sheet=1)
 recode_region <- read_xlsx('data/recodes.xlsx',sheet=2)
 recode_GT <- read_xlsx("data/Global Theme - Resp. Unit Mapping.xlsx")
+
+
+# glossary <- read_sheet("https://docs.google.com/spreadsheets/d/1S9Rpd4iIvrTvgyvCXYcRG_7BaFV82mPYo_557yVfSO4/edit?usp=sharing",sheet = 1)
+# 
+# write.csv(glossary,"data/glossary_1.csv")
+
+glossary <- read.csv("data/glossary_1.csv") %>% select(-X)
 
 ##GLOBAL FUNCTIONS ---------
 

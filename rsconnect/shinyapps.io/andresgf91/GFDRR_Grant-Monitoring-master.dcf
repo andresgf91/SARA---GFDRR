@@ -5,8 +5,9 @@ account: andresgf91
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1688054
-bundleId: 2746274
+bundleId: 3044250
 url: https://andresgf91.shinyapps.io/GFDRR_Grant-Monitoring-master/
-when: 1579703191.37674
+when: 1587476135.26596
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: PMA_code_not_in_use.R|README.md|reports/Sameh_Report_jaime_data.R|www/SARA_logo.png|www/wb_globe_BW.png
