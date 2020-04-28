@@ -51,12 +51,21 @@ server <- shinyServer(function(input,output,session) {
     }
   })
   
-  output$caption.1 <- renderText("The global overview Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ....")
-  output$caption.2 <- renderText("The Parent Trust Fund View Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ....")
-  output$caption.3 <- renderText("The Grant Portfolio View Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  ....")
-  output$caption.4 <- renderText("The Additional Informatio Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  ....")
-  output$caption.5 <- renderText("In the Report and Data Download  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  ....")
+  output$caption.1 <- renderText(gloss_banners$Text[gloss_banners$Reference=='Portfolio Overview'])
+  output$caption.2 <- renderText(gloss_banners$Text[gloss_banners$Reference=='Parent Trust Fund'])
+  output$caption.3 <- renderText(gloss_banners$Text[gloss_banners$Reference=='Grant Portfolio'])
+  output$caption.4 <- renderText(gloss_banners$Text[gloss_banners$Reference=='Additional Information'])
+  output$caption.5 <- renderText(gloss_banners$Text[gloss_banners$Reference=='Download Reports'])
   
+  reactive_description <- reactive({
+    gloss_terms %>%
+      filter(Term==input$report_type) %>%
+      select('Description')
+  })
+  output$report_description <- renderText({
+    text <- reactive_description()
+    text[[1]]
+  })
   
   observeEvent(input$opensidebar.2, {
     
@@ -742,7 +751,7 @@ server <- shinyServer(function(input,output,session) {
     
 # TAB.1.3 -------------
     output$glossary_1 <- renderTable({
-   glossary
+   gloss_terms
     },striped = T)
     
     

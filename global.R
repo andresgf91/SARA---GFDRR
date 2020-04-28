@@ -20,10 +20,10 @@ options(scipen = 999)
 old_grants_file <- "data/GFDRR Grant Level Sara Data 3_4_2020.xlsx"
 old_trustee_file <- "data/GFDRR Trustee Level Sara Data 3_4_2020.xlsx"
 
-grants_file <- "data/GFDRR Sara Raw Data 4_5_20.xlsx"
-trustee_file <- "data/GFDRR Sara Trustee Data 4_5_20.xlsx"
+grants_file <- "data/GFDRR Sara Grant Level Data 4_27_20.xlsx"
+trustee_file <- "data/GFDRR Sara Trustee Level Data 4_27_20.xlsx"
 
-JAIME_preprocess <- TRUE
+JAIME_preprocess <- FALSE
 
 #fp_raw_data <- read_xlsx(path = "data/GFDRR Raw Data 2_13_2020.xlsx",sheet = 2,skip = 6)
 fp_raw_data <- read_xlsx(path = "data/FP_GFDRR Raw Data 3_4_2020.xlsx",sheet = 2,skip = 6)
@@ -36,7 +36,9 @@ recode_GT <- read_xlsx("data/Global Theme - Resp. Unit Mapping.xlsx")
 # 
 # write.csv(glossary,"data/glossary_1.csv")
 
-glossary <- read.csv("data/glossary_1.csv") %>% select(-X)
+gloss_banners <- read.xlsx("data/Glossary_SARA.xlsx",sheet = 'Tab Banners')
+gloss_terms <- read.xlsx("data/Glossary_SARA.xlsx",sheet = 'Terminology') %>% arrange(Term)
+
 
 ##GLOBAL FUNCTIONS ---------
 
@@ -156,6 +158,17 @@ if (!("Fund Managing Unit Name" %in% grant_names)){
   
   grants$`Fund Managing Unit Name` <- grants$`TTL Unit Name`
 
+}
+
+if (!("Child Fund Managing Unit Name" %in% grant_names)){
+  
+  grants$`Child Fund Managing Unit Name` <-
+    ifelse("Fund Managing Unit Name" %in% grant_names,
+           grants$`Fund Managing Unit Name`,
+           ifelse("TTL Unit Name" %in% grant_names,
+                  grants$`TTL Unit Name`,
+                  "No managing unit in the data")
+  )
 }
 
 print(names(grants))
@@ -424,7 +437,7 @@ report_grants <- grants %>%
     "Child Fund Name" = `Fund Name`,
     "Child Fund Status" = `Fund Status`,
     "Child Fund TTL Name" = `Fund TTL Name`,
-    "Managing Unit" = `Fund Managing Unit Name`,
+    "Managing Unit" = `Child Fund Managing Unit Name`,
     "Closing FY" = closing_FY,
     "Region Name" = Region,
     "Trustee Fund Name" = temp.name,
@@ -438,11 +451,18 @@ report_grants <- grants %>%
     "2020 Disbursements" = `2020 Disbursement USD`,
     "Required Monthly Disbursement Rate" = required_disbursement_rate,
     "Disbursement Risk Level" = disbursement_risk_level
-  ) %>%
-  mutate(
-    `TTL Unit` = as.character(`TTL Unit`),
-    `Window #` = as.numeric(`Window #`)
+  ) %>% 
+  mutate(`Window #` = as.numeric(`Window #`)
   )
+
+r_names <- names(report_grants)
+
+if  ("TTL Unit" %in% r_names) {
+  
+  report_grants <- report_grants %>% 
+  mutate(`TTL Unit` = as.character(`TTL Unit`))
+}
+
 
 
 report_grants$`Disbursement Risk Level` <- factor(report_grants$`Disbursement Risk Level` ,

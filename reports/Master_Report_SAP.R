@@ -156,17 +156,17 @@ risk_summary <- df %>% group_by(`Disbursement Risk Level`) %>%
             "Total Grant Amount" = sum(`Grant Amount`),
             "Total Available Balance (Uncommitted)" = sum(`Uncommitted Balance`))
 
-risk_summary[6,] <-  c("Total Combined",
-                       sum(risk_summary$`Grant Count`),
-                       sum(risk_summary$`Total Grant Amount`),
-                       sum(risk_summary$`Total Available Balance (Uncommitted)`))
+
 
 T_risk_summary <- risk_summary %>% data.table::transpose(l=.)
 colnames(T_risk_summary) <- T_risk_summary[1,]
 T_risk_summary$Summary <- colnames(risk_summary)
 T_risk_summary <- T_risk_summary[-1,]
 
-
+T_risk_summary$`Total Combined` <-  c(
+                       sum(risk_summary$`Grant Count`),
+                       sum(risk_summary$`Total Grant Amount`),
+                       sum(risk_summary$`Total Available Balance (Uncommitted)`))
 
 T_risk_summary <- T_risk_summary %>% select(Summary,
                                             `Very High Risk`,

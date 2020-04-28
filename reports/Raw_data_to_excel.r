@@ -27,7 +27,7 @@ active_grants <- report_grants %>%
     `Execution Type`,
     `Child Fund Status`,
     `Child Fund TTL Name`,
-    `TTL Unit`,
+    #`TTL Unit`,
     `Managing Unit`,
     `Lead GP/Global Theme`,
     VPU,
