@@ -130,12 +130,13 @@ tab.1 <-  tabItem(tabName = "overview",
                     fluidRow(
                       column(
                         width = 2,
-                        tags$div(title="This is an example of how we could add text to the different elements in the dashboard",
-                                 valueBoxOutput("total_contributions", width = NULL)),
-                      valueBoxOutput("total_received", width = NULL) %>% 
-                        bs_embed_tooltip(title = "Example of where we could add text to explain the Indicators", placement = 'right'), 
-                        valueBoxOutput("total_unpaid", width = NULL) %>% 
-                        bs_embed_tooltip(title = "Testtt222"),
+                        #tags$div(title="This is an example of how we could add text to the different elements in the dashboard",
+                                 valueBoxOutput("total_contributions", width = NULL),
+                        #),
+                      valueBoxOutput("total_received", width = NULL), #%>% 
+                        #bs_embed_tooltip(title = "Example of where we could add text to explain the Indicators", placement = 'right'), 
+                        valueBoxOutput("total_unpaid", width = NULL), #%>% 
+                       # bs_embed_tooltip(title = "Testtt222"),
                         valueBoxOutput("total_active_portfolio", width = NULL),
                         valueBoxOutput("total_uncommitted_balance", width = NULL),
                         valueBoxOutput("closing<12", width = NULL)),
@@ -146,14 +147,14 @@ tab.1 <-  tabItem(tabName = "overview",
                           plotlyOutput("funding_region", height = "260px"),
                                 title=tippy('Funding by Region',"this is tippy"),
                                 background = "blue",
-                                enable_label = T,
-                                label_text = tippy("i","This is an example of how we could add more information to the graphs so the user understand what it represents",width = '90',height = '120px'),
+                                #enable_label = T,
+                                #label_text = tippy("i","This is an example of how we could add more information to the graphs so the user #understand what it represents",width = '90',height = '120px'),
                                 width = NULL,
                                 collapsible = TRUE,
                                 closable = F,
                                 collapsed = F,
                           enable_dropdown = F),
-                        tippy_this("myid", "Tooltip",placement='right'),
+                       # tippy_this("myid", "Tooltip",placement='right'),
                         boxPlus(
                           plotlyOutput("funding_GP", height = "260px"),
                                 title='Funding by Global Practice',

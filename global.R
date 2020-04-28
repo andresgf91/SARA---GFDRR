@@ -36,8 +36,8 @@ recode_GT <- read_xlsx("data/Global Theme - Resp. Unit Mapping.xlsx")
 # 
 # write.csv(glossary,"data/glossary_1.csv")
 
-gloss_banners <- read.xlsx("data/Glossary_SARA.xlsx",sheet = 'Tab Banners')
-gloss_terms <- read.xlsx("data/Glossary_SARA.xlsx",sheet = 'Terminology') %>% arrange(Term)
+gloss_banners <- read_xlsx("data/Glossary_SARA.xlsx",sheet = 'Tab Banners')
+gloss_terms <- read_xlsx("data/Glossary_SARA.xlsx",sheet = 'Terminology') %>% arrange(Term)
 
 
 ##GLOBAL FUNCTIONS ---------

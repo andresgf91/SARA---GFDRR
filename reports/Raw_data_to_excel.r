@@ -1,19 +1,19 @@
 require(openxlsx)
 
-all_grants <- raw_grants %>%
-  dplyr::rename("Available Balance (Uncommitted)" = `Available Balance USD`) %>% 
-  dplyr::mutate("Available Balance (Uncommitted)" =
-                  `Grant Amount USD` - (`Disbursements USD` + `Commitments USD`)) %>% 
-  dplyr::mutate("Real Transfers in" = `Transfer-in USD` - `Transfers-out in USD`) %>% 
-  dplyr::mutate("Not Yet Transferred" = `Grant Amount USD` - `Real Transfers in`) %>% 
-  select(-c("Transfer-in USD","Transfers-out in USD"))
-
-all_grants <- all_grants %>%
-  mutate(`Fund Country Region Name`= Region) %>% 
-  select(-Region) %>% 
-  rename("Region Name"=`Fund Country Region Name`,
-         "Cumulative Disbursements USD" = `Disbursements USD`)
-
+# all_grants <- raw_grants %>%
+#   dplyr::rename("Available Balance (Uncommitted)" = `Available Balance USD`) %>% 
+#   dplyr::mutate("Available Balance (Uncommitted)" =
+#                   `Grant Amount USD` - (`Disbursements USD` + `Commitments USD`)) %>% 
+#   dplyr::mutate("Real Transfers in" = `Transfer-in USD` - `Transfers-out in USD`) %>% 
+#   dplyr::mutate("Not Yet Transferred" = `Grant Amount USD` - `Real Transfers in`) %>% 
+#   select(-c("Transfer-in USD","Transfers-out in USD"))
+# 
+# all_grants <- all_grants %>%
+#   mutate(`Fund Country Region Name`= Region) %>% 
+#   select(-Region) %>% 
+#   rename("Region Name"=`Fund Country Region Name`,
+#          "Cumulative Disbursements USD" = `Disbursements USD`)
+# 
 
 active_grants <- report_grants %>%
   select(
@@ -83,12 +83,10 @@ D.trustee <- D.trustee %>% arrange(Donor)
 
 
 #create excel workbook
-wb <- createWorkbook()
+wb <- loadWorkbook(grants_file)
 
 #addtables 
-addWorksheet(wb, "All Grants")
-writeDataTable(wb,"All Grants", all_grants,
-               withFilter = TRUE,tableStyle = "None")
+names(wb) <-  "All Grants (SAP Data)"
 
 addWorksheet(wb, "Active Grants")
 writeDataTable(wb,"Active Grants", active_grants,startRow = 8,
@@ -109,7 +107,7 @@ low_risk <- createStyle(fgFill ="#86F9B7",halign = "left")
 medium_risk <- createStyle(fgFill ="#FFE285",halign = "left")
 high_risk <- createStyle(fgFill ="#FD8D75",halign = "left")
 very_high_risk <- createStyle(fgFill ="#F17979",halign = "left")
-grace_period_style <- createStyle(fgFill ="#B7B7B7",halign = "left")
+grace_period_style <- createStyle(fgFill ="#e0dede",halign = "left")
 
 low_risk_rows <- which(active_grants$`Disbursement Risk Level`=="Low Risk")
 medium_risk_rows <- which(active_grants$`Disbursement Risk Level`=="Medium Risk")
@@ -169,53 +167,53 @@ addStyle(wb,2,rows=4,cols = 6, style = high_risk)
 addStyle(wb,2,rows=5,cols = 6, style = medium_risk)
 addStyle(wb,2,rows=6,cols = 6, style = low_risk)
 
-if(JAIME_preprocess == FALSE){
-
-all_grants_row_range <- 1:nrow(all_grants)+1
-addStyle(wb,1,rows=all_grants_row_range,cols=25,style=date_format)   #activation date
-addStyle(wb,1,rows=all_grants_row_range,cols=26,style=date_format)   #closing date
-addStyle(wb,1,rows=all_grants_row_range,cols=27,style=dollar_format) #grant amount
-addStyle(wb,1,rows=all_grants_row_range,cols=28,style=dollar_format) #cumulative disbursements
-addStyle(wb,1,rows=all_grants_row_range,cols=29,style=dollar_format) #2020 disbursements
-addStyle(wb,1,rows=all_grants_row_range,cols=30,style=dollar_format) #commitments
-addStyle(wb,1,rows=all_grants_row_range,cols=31,style=dollar_format) #available balance
-addStyle(wb,1,rows=all_grants_row_range,cols=32,style=dollar_format) #real- transfer-in
-addStyle(wb,1,rows=all_grants_row_range,cols=33,style=dollar_format) #Not yet Transferred
-}
+# if(JAIME_preprocess == FALSE){
+# 
+# all_grants_row_range <- 1:nrow(all_grants)+1
+# addStyle(wb,1,rows=all_grants_row_range,cols=25,style=date_format)   #activation date
+# addStyle(wb,1,rows=all_grants_row_range,cols=26,style=date_format)   #closing date
+# addStyle(wb,1,rows=all_grants_row_range,cols=27,style=dollar_format) #grant amount
+# addStyle(wb,1,rows=all_grants_row_range,cols=28,style=dollar_format) #cumulative disbursements
+# addStyle(wb,1,rows=all_grants_row_range,cols=29,style=dollar_format) #2020 disbursements
+# addStyle(wb,1,rows=all_grants_row_range,cols=30,style=dollar_format) #commitments
+# addStyle(wb,1,rows=all_grants_row_range,cols=31,style=dollar_format) #available balance
+# addStyle(wb,1,rows=all_grants_row_range,cols=32,style=dollar_format) #real- transfer-in
+# addStyle(wb,1,rows=all_grants_row_range,cols=33,style=dollar_format) #Not yet Transferred
+# }
 
 active_grants_row_range <- 9:(nrow(active_grants)+8)
-addStyle(wb,2,rows=active_grants_row_range,cols=17,style=date_format,stack = TRUE)   #activation date
-addStyle(wb,2,rows=active_grants_row_range,cols=18,style=date_format,stack = TRUE)   #closing date
-addStyle(wb,2,rows=active_grants_row_range,cols=19,style=dollar_format,stack = TRUE) #grant amount
-addStyle(wb,2,rows=active_grants_row_range,cols=20,style=dollar_format,stack = TRUE) #cumulative disbursements
-addStyle(wb,2,rows=active_grants_row_range,cols=22,style=dollar_format,stack = TRUE) #2020 disbursements
-addStyle(wb,2,rows=active_grants_row_range,cols=22,style=dollar_format,stack = TRUE) #commitments
-addStyle(wb,2,rows=active_grants_row_range,cols=23,style=dollar_format,stack = TRUE) #real- transfer-in
-addStyle(wb,2,rows=active_grants_row_range,cols=24,style=dollar_format,stack = TRUE) #Not yet Transferred
-addStyle(wb,2,rows=active_grants_row_range,cols=25,style=dollar_format,stack = TRUE) #available balance
-addStyle(wb,2,rows=active_grants_row_range,cols=27,style=percent_format,stack = TRUE) #required monthly disbursement rate
+addStyle(wb,2,rows=active_grants_row_range,cols=16,style=date_format,stack = TRUE)   #activation date
+addStyle(wb,2,rows=active_grants_row_range,cols=17,style=date_format,stack = TRUE)   #closing date
+addStyle(wb,2,rows=active_grants_row_range,cols=18,style=dollar_format,stack = TRUE) #grant amount
+addStyle(wb,2,rows=active_grants_row_range,cols=19,style=dollar_format,stack = TRUE) #cumulative disbursements
+addStyle(wb,2,rows=active_grants_row_range,cols=20,style=dollar_format,stack = TRUE) #2020 disbursements
+addStyle(wb,2,rows=active_grants_row_range,cols=21,style=dollar_format,stack = TRUE) #commitments
+addStyle(wb,2,rows=active_grants_row_range,cols=22,style=dollar_format,stack = TRUE) #real- transfer-in
+addStyle(wb,2,rows=active_grants_row_range,cols=23,style=dollar_format,stack = TRUE) #Not yet Transferred
+addStyle(wb,2,rows=active_grants_row_range,cols=24,style=dollar_format,stack = TRUE) #available balance
+addStyle(wb,2,rows=active_grants_row_range,cols=26,style=percent_format,stack = TRUE) #required monthly disbursement rate
 
 addStyle(wb,2,rows = 8,cols = 1:ncol(active_grants),style = wrapped_text,stack = TRUE)
 setColWidths(wb,2,cols = 7,widths = 30)
 setColWidths(wb,2, cols = 10,widths = 12)
-setColWidths(wb,2,cols = 17:25,widths = 15)
+setColWidths(wb,2,cols = 16:24,widths = 15)
+setColWidths(wb,2,cols = 25,widths = 12)
 setColWidths(wb,2,cols = 26,widths = 12)
-setColWidths(wb,2,cols = 27,widths = 12)
-setColWidths(wb,2,cols = 28,widths = 20)
+setColWidths(wb,2,cols = 27,widths = 20)
 
 
 
 PMA_grants_row_range <- 1:nrow(PMA_grants_excel)+1
-addStyle(wb,3,rows=PMA_grants_row_range,cols=17,style=date_format,stack = TRUE)   #activation date
-addStyle(wb,3,rows=PMA_grants_row_range,cols=18,style=date_format,stack = TRUE)   #closing date
-addStyle(wb,3,rows=PMA_grants_row_range,cols=19,style=dollar_format,stack = TRUE) #grant amount
-addStyle(wb,3,rows=PMA_grants_row_range,cols=20,style=dollar_format,stack = TRUE) #cumulative disbursements
-addStyle(wb,3,rows=PMA_grants_row_range,cols=21,style=dollar_format,stack = TRUE) #2020 disbursements
-addStyle(wb,3,rows=PMA_grants_row_range,cols=22,style=dollar_format,stack = TRUE) #commitments
-addStyle(wb,3,rows=PMA_grants_row_range,cols=23,style=dollar_format,stack = TRUE) #real- transfer-in
-addStyle(wb,3,rows=PMA_grants_row_range,cols=24,style=dollar_format,stack = TRUE) #Not yet Transferred
-addStyle(wb,3,rows=PMA_grants_row_range,cols=25,style=dollar_format,stack = TRUE) #available balance
-addStyle(wb,3,rows=PMA_grants_row_range,cols=27,style=percent_format,stack = TRUE)
+addStyle(wb,3,rows=PMA_grants_row_range,cols=16,style=date_format,stack = TRUE)   #activation date
+addStyle(wb,3,rows=PMA_grants_row_range,cols=17,style=date_format,stack = TRUE)   #closing date
+addStyle(wb,3,rows=PMA_grants_row_range,cols=18,style=dollar_format,stack = TRUE) #grant amount
+addStyle(wb,3,rows=PMA_grants_row_range,cols=19,style=dollar_format,stack = TRUE) #cumulative disbursements
+addStyle(wb,3,rows=PMA_grants_row_range,cols=20,style=dollar_format,stack = TRUE) #2020 disbursements
+addStyle(wb,3,rows=PMA_grants_row_range,cols=21,style=dollar_format,stack = TRUE) #commitments
+addStyle(wb,3,rows=PMA_grants_row_range,cols=22,style=dollar_format,stack = TRUE) #real- transfer-in
+addStyle(wb,3,rows=PMA_grants_row_range,cols=23,style=dollar_format,stack = TRUE) #Not yet Transferred
+addStyle(wb,3,rows=PMA_grants_row_range,cols=24,style=dollar_format,stack = TRUE) #available balance
+addStyle(wb,3,rows=PMA_grants_row_range,cols=26,style=percent_format,stack = TRUE)
 addStyle(wb,3,rows = 1,cols = 1:ncol(PMA_grants_excel),style = wrapped_text,stack = TRUE)
 
 
