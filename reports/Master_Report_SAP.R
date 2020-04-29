@@ -222,8 +222,8 @@ summary_risk_tab_2 <- function(temp.region="ALL"){
            GPURL_binary=="GPURL",
            `Region Name` %in% temp.region) %>%
     group_by(`Disbursement Risk Level`) %>% #,`Trustee Fund Name`) %>% 
-    summarise("Available Balance (uncommitted) to Implement by 8/2020"=sum(`Uncommitted Balance`),
-              "PO Commitments to spend by 8/2020"=sum(`PO Commitments`)) 
+    summarise("Available Balance (uncommitted) to Implement by 9/2020"=sum(`Uncommitted Balance`),
+              "PO Commitments to spend by 9/2020"=sum(`PO Commitments`)) 
   
   GPURL <- full_join(GPURL,GPURL.2,by="Disbursement Risk Level")
  
@@ -240,8 +240,8 @@ summary_risk_tab_2 <- function(temp.region="ALL"){
            GPURL_binary=="Non-GPURL",
            `Region Name` %in% temp.region) %>%
     group_by(`Disbursement Risk Level`) %>% 
-    summarise("Available Balance (uncommitted) to Implement by 8/2020"=sum(`Uncommitted Balance`),
-              "PO Commitments to spend by 8/2020"=sum(`PO Commitments`))
+    summarise("Available Balance (uncommitted) to Implement by 9/2020"=sum(`Uncommitted Balance`),
+              "PO Commitments to spend by 9/2020"=sum(`PO Commitments`))
   
   NON.GPURL <- full_join(NON.GPURL,NON.GPURL.2,by="Disbursement Risk Level")
     
@@ -251,13 +251,13 @@ summary_risk_tab_2 <- function(temp.region="ALL"){
                  sum(output$`Grant Count (GPURL)`,na.rm = TRUE),
                  sum(output$`Total Grant Amount (GPURL)`,na.rm = TRUE),
                  sum(output$`Total Available Balance (uncommitted) (GPURL)`,na.rm = TRUE),
-                 sum(output$`Available Balance (uncommitted) to Implement by 8/2020 (GPURL)`,na.rm = TRUE),
-                 sum(output$`PO Commitments to spend by 8/2020 (GPURL)`,na.rm = TRUE),
+                 sum(output$`Available Balance (uncommitted) to Implement by 9/2020 (GPURL)`,na.rm = TRUE),
+                 sum(output$`PO Commitments to spend by 9/2020 (GPURL)`,na.rm = TRUE),
                  sum(output$`Grant Count (Non-GPURL)`,na.rm = TRUE),
                  sum(output$`Total Grant Amount (Non-GPURL)`,na.rm = TRUE),
                  sum(output$`Total Available Balance (uncommitted) (Non-GPURL)`,na.rm = TRUE),
-                 sum(output$`Available Balance (uncommitted) to Implement by 8/2020 (Non-GPURL)`,na.rm = TRUE),
-                 sum(output$`PO Commitments to spend by 8/2020 (Non-GPURL)`,na.rm = TRUE))
+                 sum(output$`Available Balance (uncommitted) to Implement by 9/2020 (Non-GPURL)`,na.rm = TRUE),
+                 sum(output$`PO Commitments to spend by 9/2020 (Non-GPURL)`,na.rm = TRUE))
   
   output <- rbind(output, total_row)
   for (j in unique(df$`Disbursement Risk Level`)) {
@@ -285,13 +285,13 @@ summary_risk_tab_2 <- function(temp.region="ALL"){
     mutate(`Grant Count (GPURL)`=as.numeric(`Grant Count (GPURL)`),
            `Total Grant Amount (GPURL)`=as.numeric(`Total Grant Amount (GPURL)`),
            `Total Available Balance (uncommitted) (GPURL)`=as.numeric(`Total Available Balance (uncommitted) (GPURL)`),
-           `Available Balance (uncommitted) to Implement by 8/2020 (GPURL)`= as.numeric(`Available Balance (uncommitted) to Implement by 8/2020 (GPURL)`),
-           `PO Commitments to spend by 8/2020 (GPURL)` = as.numeric(`PO Commitments to spend by 8/2020 (GPURL)`),
+           `Available Balance (uncommitted) to Implement by 9/2020 (GPURL)`= as.numeric(`Available Balance (uncommitted) to Implement by 9/2020 (GPURL)`),
+           `PO Commitments to spend by 9/2020 (GPURL)` = as.numeric(`PO Commitments to spend by 9/2020 (GPURL)`),
            `Grant Count (Non-GPURL)`= as.numeric(`Grant Count (Non-GPURL)`),
            `Total Grant Amount (Non-GPURL)`= as.numeric(`Total Grant Amount (Non-GPURL)`),
            `Total Available Balance (uncommitted) (Non-GPURL)`= as.numeric(`Total Available Balance (uncommitted) (Non-GPURL)`),
-           `Available Balance (uncommitted) to Implement by 8/2020 (Non-GPURL)`= as.numeric(`Available Balance (uncommitted) to Implement by 8/2020 (Non-GPURL)`),
-           `PO Commitments to spend by 8/2020 (Non-GPURL)`= as.numeric(`PO Commitments to spend by 8/2020 (Non-GPURL)`))
+           `Available Balance (uncommitted) to Implement by 9/2020 (Non-GPURL)`= as.numeric(`Available Balance (uncommitted) to Implement by 9/2020 (Non-GPURL)`),
+           `PO Commitments to spend by 9/2020 (Non-GPURL)`= as.numeric(`PO Commitments to spend by 9/2020 (Non-GPURL)`))
   
   
   
@@ -667,8 +667,8 @@ sum_display_df <- data.frame("Summary"= c("Grant Count",
                                           "Total $",
                                           "Total Available Balance (Uncommitted)",
                                           "% Available Balance (Uncommitted)",
-                                          "Total $ Available Balance (Uncommitted) Required to Implement by 8/2020 (MDTF, Japan 1, ACP-EU)",
-                                          "PO Commitments to spend by 8/2020  (MDTF, Japan 1, ACP-EU)"),
+                                          "Total $ Available Balance (Uncommitted) Required to Implement by 9/2020 (MDTF, Japan 1, ACP-EU)",
+                                          "PO Commitments to spend by 9/2020  (MDTF, Japan 1, ACP-EU)"),
                              "GPURL" = unname(unlist(as.list(sum_df_GPURL))),
                              "Non-GPURL" = unname(unlist(as.list(sum_df_non_GPURL))),
                              "Combined Total" = unname(unlist(as.list(sum_df_all))))

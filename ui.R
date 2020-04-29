@@ -799,7 +799,7 @@ tabItems(tab.1,tab.3,tab.2,tab.1.3,tab.reports))
 
 
 # UI ------
-ui <- dashboardPagePlus(title = "SARA-BETA Version",
+ui <- dashboardPagePlus(title = "SARA-GFDRR",
                         collapse_sidebar = T,
                         useShinyjs(),
                         header = Header,
