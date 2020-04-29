@@ -160,11 +160,11 @@ if (!("Fund Managing Unit Name" %in% grant_names)){
 
 }
 
-if (!("Child Fund Managing Unit Name" %in% grant_names)){
+if (!("Child Fund Managing Unit" %in% grant_names)){
   
-  grants$`Child Fund Managing Unit Name` <-
-    ifelse("Child Fund Managing Unit" %in% grant_names,
-           grants$`Child Fund Managing Unit`,
+  grants$`Child Fund Managing Unit` <- 
+    ifelse("Child Fund Managing Unit Name" %in% grant_names,
+           grants$`Child Fund Managing Unit Name`,
            ifelse("Fund Managing Unit Name" %in% grant_names,
                   grants$`Fund Managing Unit Name`, 
            ifelse("TTL Unit Name" %in% grant_names,
@@ -440,7 +440,7 @@ report_grants <- grants %>%
     "Child Fund Name" = `Fund Name`,
     "Child Fund Status" = `Fund Status`,
     "Child Fund TTL Name" = `Fund TTL Name`,
-    "Managing Unit" = `Child Fund Managing Unit Name`,
+    "Managing Unit" = `Child Fund Managing Unit`,
     "Closing FY" = closing_FY,
     "Region Name" = Region,
     "Trustee Fund Name" = temp.name,
