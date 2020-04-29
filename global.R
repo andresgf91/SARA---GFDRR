@@ -163,11 +163,14 @@ if (!("Fund Managing Unit Name" %in% grant_names)){
 if (!("Child Fund Managing Unit Name" %in% grant_names)){
   
   grants$`Child Fund Managing Unit Name` <-
-    ifelse("Fund Managing Unit Name" %in% grant_names,
-           grants$`Fund Managing Unit Name`,
+    ifelse("Child Fund Managing Unit" %in% grant_names,
+           grants$`Child Fund Managing Unit`,
+           ifelse("Fund Managing Unit Name" %in% grant_names,
+                  grants$`Fund Managing Unit Name`, 
            ifelse("TTL Unit Name" %in% grant_names,
                   grants$`TTL Unit Name`,
                   "No managing unit in the data")
+           )
   )
 }
 
