@@ -243,8 +243,7 @@ tab.1.3 <-  tabItem(tabName = "admin_info",
 
 ## tab.2 (Parent Trustfund View) ----------------------
 tab.2 <- tabItem(tabName = "parent_tf",
-                 fluidPage(use_waiter(),
-                           waiter_show_on_load(),
+                 fluidPage(
                    theme = "light",
                    fluidRow(
                      column(width=10,
