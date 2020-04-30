@@ -4373,33 +4373,36 @@ server <- shinyServer(function(input,output,session) {
                                
                                #Grant Details (by Region and Country)
                                pt.1 <-
-                                 PivotTable$new(argumentCheckMode = 'minimal')
+                                 PivotTable$new(argumentCheckMode = 'minimal',)
                                pt.1$addData(data)
                                pt.1$addRowDataGroups(
                                  "Region Name",
-                                 outlineBefore = list(isEmpty = FALSE),
-                                 outlineTotal = list(isEmpty = FALSE)
+                                 header = "Region Name",
+                                 outlineBefore = list(isEmpty = TRUE)
                                )
-                               pt.1$addRowDataGroups("Country")
+                               pt.1$addRowDataGroups("Country",header = "Country")
                                pt.1$defineCalculation(calculationName =
                                                         "#Grants", summariseExpression = "n()")
                                pt.1$defineCalculation(calculationName =
-                                                        "$Total Grant Amount", summariseExpression = "sum(`Grant Amount`)")
+                                                        "$Total Grant Amount",
+                                                      summariseExpression = "sum(`Grant Amount`)")
                                pt.1$defineCalculation(calculationName =
                                                         "Total Available Balance (Uncommitted)",
                                                       summariseExpression =
                                                         "sum(`Remaining Available Balance`)")
+                               
                                pt.1$evaluatePivot()
                                
                                
                                pt.2 <-
                                  PivotTable$new(argumentCheckMode = 'minimal')
                                pt.2$addData(data)
-                               pt.2$addRowDataGroups("Trustee Fund Name")
+                               pt.2$addRowDataGroups("Trustee Fund Name",header="Trustee Fund Name")
                                pt.2$defineCalculation(calculationName =
                                                         "#Grants", summariseExpression = "n()")
                                pt.2$defineCalculation(calculationName =
-                                                        "$Total Grant Amount", summariseExpression = "sum(`Grant Amount`)")
+                                                        "$Total Grant Amount",
+                                                      summariseExpression = "sum(`Grant Amount`)")
                                pt.2$defineCalculation(calculationName =
                                                         "Total Available Balance (Uncommitted)",
                                                       summariseExpression =
@@ -4427,7 +4430,7 @@ server <- shinyServer(function(input,output,session) {
                                pt.4$addColumnDataGroups("Disbursement Risk Level")
                                pt.4$addRowDataGroups(
                                  "Region Name",
-                                 outlineBefore = list(isEmpty = FALSE),
+                                 outlineBefore = list(isEmpty = TRUE),
                                  outlineTotal = list(isEmpty = FALSE)
                                )
                                pt.4$addRowDataGroups("Country")
@@ -4543,7 +4546,7 @@ server <- shinyServer(function(input,output,session) {
                                  wsName = "Summary",
                                  topRowNumber = start.1,
                                  leftMostColumnNumber = left.1 - 1,
-                                 applyStyles = TRUE
+                                 applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
                                
@@ -4552,7 +4555,7 @@ server <- shinyServer(function(input,output,session) {
                                  wsName = "Summary",
                                  topRowNumber = start.2,
                                  leftMostColumnNumber = left.1,
-                                 applyStyles = TRUE
+                                 applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
                                
@@ -4561,7 +4564,7 @@ server <- shinyServer(function(input,output,session) {
                                  wsName = "Summary",
                                  topRowNumber = start.3,
                                  leftMostColumnNumber = left.1,
-                                 applyStyles = TRUE
+                                 applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
                                pt.4$writeToExcelWorksheet(
@@ -4569,7 +4572,7 @@ server <- shinyServer(function(input,output,session) {
                                  wsName = "Summary",
                                  topRowNumber = start.1,
                                  leftMostColumnNumber = left.2,
-                                 applyStyles = TRUE
+                                 applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
                                
@@ -4578,7 +4581,7 @@ server <- shinyServer(function(input,output,session) {
                                  wsName = "Summary",
                                  topRowNumber = start.2,
                                  leftMostColumnNumber = left.2 + 1,
-                                 applyStyles = TRUE
+                                 applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
                                
@@ -4587,16 +4590,16 @@ server <- shinyServer(function(input,output,session) {
                                  wsName = "Summary",
                                  topRowNumber = start.3,
                                  leftMostColumnNumber = left.2 + 1,
-                                 applyStyles = TRUE
+                                 applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
                                
                                excel_df <- data %>% select(
+                                 `Child Fund #`,
                                  `Window #`,
                                  `Window Name`,
                                  `Trustee #`,
                                  `Trustee Fund Name`,
-                                 `Child Fund #`,
                                  `Child Fund Name`,
                                  `Project ID`,
                                  `Execution Type`,
@@ -4629,7 +4632,35 @@ server <- shinyServer(function(input,output,session) {
                                )
                                
                                excel_df <-
-                                 excel_df %>% rename("Available Balance (Uncommitted)" = `Remaining Available Balance`)
+                                 excel_df %>% rename("Available Balance (Uncommitted)" = `Remaining Available Balance`) %>% 
+                                 mutate(`Required Monthly Disbursement Rate`=
+                                          ifelse(`Required Monthly Disbursement Rate`==999,
+                                                 NA,
+                                                 `Required Monthly Disbursement Rate`))
+                               
+                               excel_df <- excel_df %>%
+                                 mutate(`Disbursement Risk Level` =
+                                          ifelse(
+                                            `Disbursement Risk Level` == "Very High Risk",
+                                            "4. Very High Risk",
+                                            ifelse(
+                                              `Disbursement Risk Level` == "High Risk",
+                                              "3. High Risk",
+                                              ifelse(
+                                                `Disbursement Risk Level` == "Medium Risk",
+                                                "2. Medium Risk",
+                                                ifelse(
+                                                  `Disbursement Risk Level` == "Low Risk",
+                                                  "1. Low Risk",
+                                                  ifelse(
+                                                    `Disbursement Risk Level` == "Closed (Grace Period)",
+                                                    "0. Closed (Grace Period)","error"
+                                            ))))
+                                          ))
+                               
+                               excel_df <- excel_df %>%
+                                 dplyr::arrange(desc(`Disbursement Risk Level`))
+                               
                                
                                addWorksheet(wb, "MASTER grants")
                                writeDataTable(wb,
@@ -4795,14 +4826,25 @@ server <- shinyServer(function(input,output,session) {
                                    message("Finished conditionally formatting this bad boy")
                                  }
                                
-                               conditionally_format_rows(pt.1, start.1, 6)
-                               conditionally_format_rows(pt.2, start.2, 6)
-                               conditionally_format_rows(pt.2, start.3, 6)
-                               conditionally_format_rows(pt.4, start.1, 10:11)
-                               conditionally_format_rows(pt.5, start.2, 10:11)
-                               conditionally_format_rows(pt.6, start.3, 10:11)
+                               # conditionally_format_rows(pt.1, start.1, 6)
+                               # conditionally_format_rows(pt.2, start.2, 6)
+                               # conditionally_format_rows(pt.2, start.3, 6)
+                               # conditionally_format_rows(pt.4, start.1, 10:11)
+                               # conditionally_format_rows(pt.5, start.2, 10:11)
+                               # conditionally_format_rows(pt.6, start.3, 10:11)
                                
+                               # 
+                               # conditionalFormatting(
+                               #   wb,
+                               #   "Summary",
+                               #   cols = 6,
+                               #   rows = c(17:19,21:148),
+                               #   style = c("white", "red"),
+                               #   type = "colourScale"
+                               # )
+                               # 
                                
+                           
                                cols_r <-  c(5, 6, 10:15)
                                rows_r <- 6:end.3
                                
@@ -4859,9 +4901,46 @@ server <- shinyServer(function(input,output,session) {
                                setColWidths(wb, 1, 4:15, widths = 'auto')
                                setColWidths(wb, 1, 3, widths = 20)
                                addStyle(wb, 1, wrapped_text, 5:9, 3, stack = T)
-                               #deleteData(wb,1,3,4)
+                               addStyle(wb,2,date_format,rows=2:(nrow(excel_df)+2),cols = 17)
+                               addStyle(wb,2,date_format,rows=2:(nrow(excel_df)+2),cols = 18)
+                               setColWidths(wb, 2, cols = 17:18, widths = 15)
+                               
+                              message("coloring this for you kind sir")
+                               
+                               low_risk_rows <- which(excel_df$`Disbursement Risk Level`=="1. Low Risk")
+                               medium_risk_rows <- which(excel_df$`Disbursement Risk Level`=="2. Medium Risk")
+                               high_risk_rows <- which(excel_df$`Disbursement Risk Level`=="3. High Risk")
+                               very_high_risk_rows <- which(excel_df$`Disbursement Risk Level`=="4. Very High Risk")
+                               grace_period_rows <- which(excel_df$`Disbursement Risk Level`=="0. Closed (Grace Period)")
+                        
+                               addStyle(wb,2,rows=low_risk_rows+2 ,cols=28,style = low_risk)
+                               addStyle(wb,2,rows=medium_risk_rows+2,cols=28,style = medium_risk)
+                               addStyle(wb,2,rows=high_risk_rows+2,cols=28,style = high_risk)
+                               addStyle(wb,2,rows=very_high_risk_rows+2,cols=28,style = very_high_risk)
+                               addStyle(wb,2,rows=grace_period_rows+2,cols=28,style = grace_period_style)
                                
                                
+                               row_range <- 1:nrow(excel_df)+2
+                               
+                               addStyle(wb,2, dollar_format,rows = row_range,cols = 19)
+                               addStyle(wb,2, dollar_format,rows = row_range,cols = 20)
+                               addStyle(wb,2, dollar_format,rows = row_range,cols = 21)
+                               addStyle(wb,2, dollar_format,rows = row_range,cols = 22)
+                               addStyle(wb,2, dollar_format,rows = row_range,cols = 23)
+                               addStyle(wb,2, dollar_format,rows = row_range,cols = 24)
+                               addStyle(wb,2, dollar_format,rows = row_range,cols = 25)
+                               addStyle(wb,2, dollar_format,rows = row_range,cols = 26)
+                               addStyle(wb,2, dollar_format,rows = row_range,cols = 27)
+                               addStyle(wb,2,percent_format,rows = row_range,cols = 30)
+                               setColWidths(wb, 2, cols = 19:27, widths = 12)
+                               setColWidths(wb, 2, cols = 5, widths = 14)
+                               setColWidths(wb, 2, cols = 6, widths = 45)
+                               setColWidths(wb, 2, cols = c(10,12), widths = 25)
+                               setColWidths(wb, 2, cols = 13, widths = 10)
+                               setColWidths(wb, 2, cols = 16, widths = 12)
+                               setColWidths(wb, 2, cols = 28, widths = 15)
+                               
+                             
                                wb
                                
                              },file,overwrite = TRUE)})
@@ -4881,6 +4960,41 @@ server <- shinyServer(function(input,output,session) {
                                
                                source("reports/Raw_data_to_excel.r")
                                wb
+                               
+                               
+                               
+                               low_risk <- createStyle(fgFill ="#86F9B7",halign = "left")
+                               medium_risk <- createStyle(fgFill ="#FFE285",halign = "left")
+                               high_risk <- createStyle(fgFill ="#FD8D75",halign = "left")
+                               very_high_risk <- createStyle(fgFill ="#F17979",halign = "left")
+                               grace_period_style <- createStyle(fgFill ="#B7B7B7",halign = "left")
+                               
+                               low_risk_rows <- which(df$`Disbursement Risk Level`=="Low Risk")
+                               medium_risk_rows <- which(df$`Disbursement Risk Level`=="Medium Risk")
+                               high_risk_rows <- which(df$`Disbursement Risk Level`=="High Risk")
+                               very_high_risk_rows <- which(df$`Disbursement Risk Level`=="Very High Risk")
+                               grace_period_rows <- which(df$`Disbursement Risk Level`=="Closed (Grace Period)")
+                               
+                               for (i in low_risk_rows){
+                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = low_risk)
+                               }
+                               
+                               for (i in medium_risk_rows){
+                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = medium_risk)
+                               }
+                               
+                               for (i in high_risk_rows){
+                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = high_risk)
+                               }
+                               
+                               for (i in very_high_risk_rows){
+                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = very_high_risk)
+                               }
+                               
+                               for (i in grace_period_rows){
+                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = grace_period_style)
+                               }
+                               
                                
                              },file,overwrite = TRUE)},value = .99)
             })
