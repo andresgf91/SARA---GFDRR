@@ -4373,7 +4373,7 @@ server <- shinyServer(function(input,output,session) {
                                
                                #Grant Details (by Region and Country)
                                pt.1 <-
-                                 PivotTable$new(argumentCheckMode = 'minimal',)
+                                 PivotTable$new(argumentCheckMode = 'minimal')
                                pt.1$addData(data)
                                pt.1$addRowDataGroups(
                                  "Region Name",
@@ -4412,7 +4412,7 @@ server <- shinyServer(function(input,output,session) {
                                pt.3 <-
                                  PivotTable$new(argumentCheckMode = 'minimal')
                                pt.3$addData(data)
-                               pt.3$addRowDataGroups("Lead GP/Global Theme")
+                               pt.3$addRowDataGroups("Lead GP/Global Theme",header="Lead GP/Global Theme")
                                pt.3$defineCalculation(calculationName =
                                                         "#Grants", summariseExpression = "n()")
                                pt.3$defineCalculation(calculationName =
@@ -4429,11 +4429,11 @@ server <- shinyServer(function(input,output,session) {
                                pt.4$addData(data)
                                pt.4$addColumnDataGroups("Disbursement Risk Level")
                                pt.4$addRowDataGroups(
-                                 "Region Name",
+                                 "Region Name",header = "Region Name",
                                  outlineBefore = list(isEmpty = TRUE),
                                  outlineTotal = list(isEmpty = FALSE)
                                )
-                               pt.4$addRowDataGroups("Country")
+                               pt.4$addRowDataGroups("Country",header="Country")
                                pt.4$defineCalculation(calculationName =
                                                         "Available Balance (Uncommitted)",
                                                       summariseExpression =
@@ -4445,7 +4445,7 @@ server <- shinyServer(function(input,output,session) {
                                  PivotTable$new(argumentCheckMode = 'minimal')
                                pt.5$addData(data)
                                pt.5$addColumnDataGroups("Disbursement Risk Level")
-                               pt.5$addRowDataGroups("Trustee Fund Name")
+                               pt.5$addRowDataGroups("Trustee Fund Name",header="Trustee Fund Name")
                                pt.5$defineCalculation(calculationName =
                                                         "Available Balance (Uncommitted)",
                                                       summariseExpression =
@@ -4457,7 +4457,7 @@ server <- shinyServer(function(input,output,session) {
                                  PivotTable$new(argumentCheckMode = 'minimal')
                                pt.6$addData(data)
                                pt.6$addColumnDataGroups("Disbursement Risk Level")
-                               pt.6$addRowDataGroups("Lead GP/Global Theme")
+                               pt.6$addRowDataGroups("Lead GP/Global Theme",header="Lead GP/Global Theme")
                                pt.6$defineCalculation(calculationName =
                                                         "Available Balance (Uncommitted)",
                                                       summariseExpression =

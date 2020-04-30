@@ -125,7 +125,7 @@ Sidebar <- dashboardSidebar(
 ## tab.1 (Overview)---------------
 tab.1 <-  tabItem(tabName = "overview",
                     theme = shinytheme("readable"),
-                     titlePanel('Global Overview'),
+                     titlePanel('Portfolio Overview'),
                   panel(textOutput("caption.1")),
                     fluidRow(
                       column(
@@ -145,7 +145,7 @@ tab.1 <-  tabItem(tabName = "overview",
                        
                         boxPlus(id="myid",
                           plotlyOutput("funding_region", height = "260px"),
-                                title=tippy('Funding by Region',"this is tippy"),
+                                title='Funding by Region',
                                 background = "blue",
                                 #enable_label = T,
                                 #label_text = tippy("i","This is an example of how we could add more information to the graphs so the user #understand what it represents",width = '90',height = '120px'),
