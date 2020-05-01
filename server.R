@@ -344,6 +344,46 @@ server <- shinyServer(function(input,output,session) {
                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                margin=m)
     })
+    output$pie_grants_by_FY <- renderPlotly({
+      
+      temp_df <- grants %>%  mutate(activation_FY= as.character(ifelse(is.na(activation_FY),
+                                                          "PEND",
+                                                          activation_FY))) %>% 
+        group_by(activation_FY) %>%
+        summarise(n_grants = n(),
+                  remaining_balance = round(sum(`Remaining Available Balance`)),
+                  total_award_amount= sum(`Grant Amount USD`)) %>% 
+        dplyr::arrange(desc(activation_FY))
+      
+      total <- sum(temp_df$total_award_amount)
+      
+      m <- list(
+        l = 5,
+        r = 2,
+        b = 10,
+        t = 20,
+        pad = 4
+      )
+      
+      colors <- c('rgb(17,71,250)','rgb(192,207,255)')
+      
+      plot_ly(textposition="outside",type = "pie",
+              title="Grants \n by Activation FY",
+                data = temp_df,
+                labels=~activation_FY,
+                values = ~n_grants,
+              sort=FALSE,
+                domain = list(x = c(0, 0.95),
+                              y = c(0.15, 1)),
+                name = paste0("Active","\n", "Grants"),
+                textinfo="value",
+                marker = list(colors=colors),
+                hole = 0.70,rotation=90) %>% 
+        layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+               yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+               margin=m) %>% 
+        layout(legend=list(title=list(text='Activation FY')))
+    })
     
     output$total_remaining_balance <- renderValueBox({
       
@@ -3918,7 +3958,7 @@ server <- shinyServer(function(input,output,session) {
               wb <- report_function()
               wb
               
-            },file,overwrite = TRUE)})
+            },file,overwrite = TRUE)},value = .99)
           })
         
         
@@ -4272,7 +4312,7 @@ server <- shinyServer(function(input,output,session) {
                 wb <- report_function()
                 wb
                 
-              },file,overwrite = TRUE) })
+              },file,overwrite = TRUE) },value = .99)
               
          
 
@@ -4294,7 +4334,7 @@ server <- shinyServer(function(input,output,session) {
                 source("reports/Master_Report_SAP.R")
                 wb
                 
-          },file,overwrite = TRUE)})
+          },file,overwrite = TRUE)},value = .99)
           })
         
         
@@ -4943,7 +4983,7 @@ server <- shinyServer(function(input,output,session) {
                              
                                wb
                                
-                             },file,overwrite = TRUE)})
+                             },file,overwrite = TRUE)},value = .99)
             })
         
 
@@ -4960,40 +5000,6 @@ server <- shinyServer(function(input,output,session) {
                                
                                source("reports/Raw_data_to_excel.r")
                                wb
-                               
-                               
-                               
-                               low_risk <- createStyle(fgFill ="#86F9B7",halign = "left")
-                               medium_risk <- createStyle(fgFill ="#FFE285",halign = "left")
-                               high_risk <- createStyle(fgFill ="#FD8D75",halign = "left")
-                               very_high_risk <- createStyle(fgFill ="#F17979",halign = "left")
-                               grace_period_style <- createStyle(fgFill ="#B7B7B7",halign = "left")
-                               
-                               low_risk_rows <- which(df$`Disbursement Risk Level`=="Low Risk")
-                               medium_risk_rows <- which(df$`Disbursement Risk Level`=="Medium Risk")
-                               high_risk_rows <- which(df$`Disbursement Risk Level`=="High Risk")
-                               very_high_risk_rows <- which(df$`Disbursement Risk Level`=="Very High Risk")
-                               grace_period_rows <- which(df$`Disbursement Risk Level`=="Closed (Grace Period)")
-                               
-                               for (i in low_risk_rows){
-                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = low_risk)
-                               }
-                               
-                               for (i in medium_risk_rows){
-                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = medium_risk)
-                               }
-                               
-                               for (i in high_risk_rows){
-                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = high_risk)
-                               }
-                               
-                               for (i in very_high_risk_rows){
-                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = very_high_risk)
-                               }
-                               
-                               for (i in grace_period_rows){
-                                 addStyle(wb,1,rows=i+RISK.df.row,cols=1:length(excel_df),style = grace_period_style)
-                               }
                                
                                
                              },file,overwrite = TRUE)},value = .99)

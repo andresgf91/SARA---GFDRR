@@ -306,6 +306,10 @@ grants$closing_FY <- ifelse(month(grants$`Closing Date`) > 6,
                          year(grants$`Closing Date`) + 1,
                          year(grants$`Closing Date`))
 
+grants$activation_FY <- ifelse(month(grants$`Activation Date`) > 6,
+                            year(grants$`Activation Date`) + 1,
+                            year(grants$`Activation Date`))
+
 grants$remaining_balance <- grants$`Grant Amount USD` - (grants$`Disbursements USD` + grants$`Commitments USD`)
 
 grants$unnacounted_amount <- grants$`Grant Amount USD` - (grants$`Disbursements USD` + grants$`Commitments USD`)
@@ -514,7 +518,9 @@ risk_colors <- tibble(
 "Low Risk" = "#86F9B7",
 "Closed (Grace Period)" = "#B7B7B7")
 
-
+current_FY <- ifelse(month(date_data_udpated) > 6,
+                     year(date_data_udpated) + 1,
+                     year(date_data_udpated))
 
 rm(processed_data)
 
