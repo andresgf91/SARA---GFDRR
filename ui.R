@@ -179,11 +179,19 @@ tab.1 <-  tabItem(tabName = "overview",
                       ),
                       column(
                         width = 6,
-                        boxPlus(
-                         # column(width = 5,
-                               #  plotlyOutput("pie_grants_by_FY",
-                                           #   height = "260px")),
-                         # column(width = 7,
+                        fluidRow(
+                          column(width = 6,
+                                 boxPlus(title = "Active grants by activation FY",
+                                plotlyOutput("pie_grants_by_FY",
+                                             height = "260px"),
+                                background = "blue",
+                                enable_label = T,
+                                label_text = NULL,
+                                width = NULL,
+                                collapsible = TRUE,
+                                closable = F)),
+                          column(width = 6,
+                                 boxPlus(
                                  plotlyOutput("elpie",
                                               height = "260px"),
                                  #),
@@ -194,7 +202,7 @@ tab.1 <-  tabItem(tabName = "overview",
                           width = NULL,
                           collapsible = TRUE,
                           closable = F
-                        ),
+                        ))),
                         
                         boxPlus(
                           plotlyOutput("plot1",
@@ -400,6 +408,7 @@ tab.3 <-  tabItem(
       valueBoxOutput("high_risk", width = 6),
       valueBoxOutput("very_high_risk", width = 6),
       valueBoxOutput("grace_period_grants", width = 6),
+      valueBoxOutput("grants_active_this_FY", width = 6),
       valueBoxOutput(outputId = "focal_grants_closing_3", width = 6),
       valueBoxOutput(outputId = "focal_grants_active_3_zero_dis", width = 6),
       valueBoxOutput(outputId = "region_grants_may_need_transfer", width = 6),
@@ -612,7 +621,7 @@ tab.reports <- tabItem(
            selectInput(inputId = "report_type",label=NULL,
                        choices= c("Summary Report",
                                   "Disbursement Risk Report",
-                                  "Pivot Report (Draft Version)",
+                                  "Pivot Table Report",
                                   "Combined Report (Master)",
                                   "SAP Data (Source Data)"),
                        selectize=TRUE),
@@ -665,44 +674,95 @@ tab.reports <- tabItem(
              )
            ),
            conditionalPanel(
-             condition = "input.report_type == 'Pivot Report (Draft Version)'",
+             condition = "input.report_type == 'Pivot Table Report'",
              boxPad(color = 'blue',
-                    selectInput(inputId = "pivot_fund_status",width = '100%',
-                                label="Child Fund Status:",
-                                choices= c("ACTV","PEND"),
-                                multiple = T,
-                                selectize = T,
-                                selected =  c("ACTV","PEND")),
-                    selectInput(inputId = "pivot_region",width = '100%',
-                                label="Region Name(s):",
-                                choices= sort(unique(grants$Region)),
-                                multiple = T,
-                                selectize = T,
-                                selected =  sort(unique(grants$Region))),
-                    selectInput(inputId = "pivot_trustee",width = '100%',
-                                label="Trustee(s):",
-                                choices= sort(unique(grants$temp.name)),
-                                multiple = T,
-                                selectize = T,
-                                selected =  sort(unique(grants$temp.name))),
-                    selectInput(inputId = "pivot_exec_type",width = '100%',
-                                label="Execution Type:",
-                                choices= sort(unique(grants$`DF Execution Type`)),
-                                multiple = T,
-                                selectize = T,
-                                selected =  sort(unique(grants$`DF Execution Type`))),
-                    selectInput(inputId = "pivot_GPURL_binary",width = '100%',
-                                label="GPURL Binary",
-                                choices= sort(unique(grants$GPURL_binary)),
-                                multiple = T,
-                                selectize = T,
-                                selected =  sort(unique(grants$GPURL_binary))),
-                    selectInput(inputId = "pivot_GP",width = '100%',
-                                label="Lead GP/Global Themes",
-                                choices= sort(unique(grants$`Lead GP/Global Themes`)),
-                                multiple = T,
-                                selectize = T,
-                                selected =  sort(unique(grants$`Lead GP/Global Themes`)))
+                    textOutput("caption.edit_pivot"),
+                    checkboxGroupButtons( 'pivot_fund_status',
+                                          "Selected fund status:",
+                                          choices = c("ACTV","PEND"),
+                                          selected = c("ACTV","PEND"),
+                                          size = "sm",
+                                          justified = F,
+                                          status = "primary",
+                                          individual = T,
+                                          width='100%',
+                                          checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+                    # selectInput(inputId = "pivot_fund_status",width = '100%',
+                    #             label="Child Fund Status:",
+                    #             choices= c("ACTV","PEND"),
+                    #             multiple = T,
+                    #             selectize = T,
+                    #             selected =  c("ACTV","PEND")),
+                    checkboxGroupButtons( 'pivot_region',
+                                          "Selected Regions:",
+                                          choices = sort(unique(grants$Region)),
+                                          selected = sort(unique(grants$Region)),
+                                          size = "sm",
+                                          justified = F,
+                                          status = "primary",
+                                          individual = T,
+                                          width='100%',
+                                          checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+                    # selectInput(inputId = "pivot_region",width = '100%',
+                    #             label="Region Name(s):",
+                    #             choices= sort(unique(grants$Region)),
+                    #             multiple = T,
+                    #             selectize = T,
+                    #             selected =  sort(unique(grants$Region))),
+                    # selectInput(inputId = "pivot_trustee",width = '100%',
+                    #             label="Trustee(s):",
+                    #             choices= sort(unique(grants$temp.name)),
+                    #             multiple = T,
+                    #             selectize = T,
+                    #             selected =  sort(unique(grants$temp.name))),
+                    checkboxGroupButtons( 'pivot_trustee',
+                                          "Selected Trustees (Parent Funds):",
+                                          choices = sort(unique(grants$temp.name)),
+                                          selected = sort(unique(grants$temp.name)),
+                                          size = "sm",
+                                          justified = F,
+                                          status = "primary",
+                                          individual = T,
+                                          width='100%',
+                                          checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+                    # selectInput(inputId = "pivot_exec_type",width = '100%',
+                    #             label="Execution Type:",
+                    #             choices= sort(unique(grants$`DF Execution Type`)),
+                    #             multiple = T,
+                    #             selectize = T,
+                    #             selected =  sort(unique(grants$`DF Execution Type`))),
+                    checkboxGroupButtons( 'pivot_exec_type',
+                                          "Selected execution types:",
+                                          choices = sort(unique(grants$`DF Execution Type`)),
+                                          selected = sort(unique(grants$`DF Execution Type`)),
+                                          size = "sm",
+                                          justified = F,
+                                          status = "primary",
+                                          individual = T,
+                                          width='100%',
+                                          checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
+                    # selectInput(inputId = "pivot_GPURL_binary",width = '100%',
+                    #             label="GPURL Binary",
+                    #             choices= sort(unique(grants$GPURL_binary)),
+                    #             multiple = T,
+                    #             selectize = T,
+                    #             selected =  sort(unique(grants$GPURL_binary))),
+                    checkboxGroupButtons( 'pivot_GP',
+                                          "Selected GP/Global Themes:",
+                                          choices = sort(unique(grants$`Lead GP/Global Themes`)),
+                                          selected = sort(unique(grants$`Lead GP/Global Themes`)),
+                                          size = "sm",
+                                          justified = F,
+                                          status = "primary",
+                                          individual = T,
+                                          width='100%',
+                                          checkIcon = list(yes = icon("ok", lib = "glyphicon")))
+                    #selectInput(inputId = "pivot_GP",width = '100%',
+                               # label="Lead GP/Global Themes",
+                               # choices= sort(unique(grants$`Lead GP/Global Themes`)),
+                               # multiple = T,
+                               # selectize = T,
+                               # selected =  sort(unique(grants$`Lead GP/Global Themes`)))
            )
     ),
     conditionalPanel(condition = "input.report_type == 'Summary Report'",
@@ -714,7 +774,7 @@ tab.reports <- tabItem(
     conditionalPanel(condition = "input.report_type == 'Combined Report (Master)'",
                      downloadButton("Download_master_report.xlsx",
                                     label = 'Download Report')),
-    conditionalPanel(condition = "input.report_type == 'Pivot Report (Draft Version)'",
+    conditionalPanel(condition = "input.report_type == 'Pivot Table Report'",
                      downloadButton("Download_pivot_report.xlsx",
                                     label = 'Download Report')),
     conditionalPanel(condition = "input.report_type == 'SAP Data (Source Data)'",
@@ -723,6 +783,7 @@ tab.reports <- tabItem(
   )
 )
 )
+
 
 ## BODY ---------------
 Body <- dashboardBody(
@@ -748,64 +809,18 @@ font-style: italic;
 
 }
 
-
+ #report_description {font-size:20px;
+               display:block; }
 
   '))),
 tabItems(tab.1,tab.3,tab.2,tab.1.3,tab.reports))
 #tab.2,tab.3,PMA.tab,tab.1.3,tab.5,tab.6))
 
-# RAY OF SUNSHINE --------------
-# ray.of.sunshine <- rightSidebar(
-#   background = "dark",
-#   rightSidebarTabContent(
-#     id= 1,
-#     icon="desktop",
-#     active=TRUE,
-#     title= "Tab 1",
-#     selectInput('select_trustee',"Selected trustee:",
-#                 choices = sort(unique(active_trustee$temp.name)))
-#   ),
-#   rightSidebarTabContent(
-#     id = 2,icon="gears",
-#     selectInput(
-#       'focal_select_region',
-#       "Selected Region(s):",
-#       choices = sort(unique(grants$Region)),
-#       multiple = TRUE,
-#       selectize = TRUE,
-#       selected = sort(unique(grants$Region))
-#     ),
-#     selectInput(
-#       'focal_select_trustee',
-#       "Select a Trustee",
-#       choices = c("All" = "", sort(unique(grants$temp.name))),
-#       multiple = TRUE,
-#       selectize = TRUE,
-#       selected = unique(grants$temp.name),
-#       width = NULL
-#     ),
-#     selectInput(
-#       "region_BE_RE",
-#       "Selected Grant Exc. Types:",
-#       choices = unique(grants$`DF Execution Type`),
-#       multiple = T,
-#       selectize = T,
-#       selected = unique(grants$`DF Execution Type`)
-#     ),
-#     selectInput(
-#       "region_PMA_or_not",
-#       "Select Grant Types",
-#       choices = unique(grants$PMA.2),
-#       multiple = T,
-#       selectize = T,
-#       selected = unique(grants$PMA.2)
-#   )
-# )
-# )
+
 
 
 # UI ------
-ui <- dashboardPagePlus(title = "SARA-GFDRR",
+ui <- dashboardPagePlus(title = "BETA-SARA-GFDRR",
                         collapse_sidebar = T,
                         useShinyjs(),
                         header = Header,

@@ -57,6 +57,9 @@ server <- shinyServer(function(input,output,session) {
   output$caption.4 <- renderText(gloss_banners$Text[gloss_banners$Reference=='Additional Information'])
   output$caption.5 <- renderText(gloss_banners$Text[gloss_banners$Reference=='Download Reports'])
   
+  output$caption.edit_pivot <- renderText("You can edit the outputs from this report by selecting (or deselecting) the
+                                          variables below:  \n  ")
+  
   reactive_description <- reactive({
     gloss_terms %>%
       filter(Term==input$report_type) %>%
@@ -65,7 +68,7 @@ server <- shinyServer(function(input,output,session) {
   output$report_description <- renderText({
     text <- reactive_description()
     text[[1]]
-  })
+  },outputArgs = )
   
   observeEvent(input$opensidebar.2, {
     
@@ -318,7 +321,7 @@ server <- shinyServer(function(input,output,session) {
       
       colors <- c('rgb(17,71,250)','rgb(192,207,255)')
     
-      plot_ly(textposition="outside") %>%
+   plot_ly(textposition="outside") %>%
         add_pie(title="Number of Grants",
           data = temp_df,
                 labels=~PMA,
@@ -343,16 +346,24 @@ server <- shinyServer(function(input,output,session) {
         layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                margin=m)
+      
+      
+      
     })
     output$pie_grants_by_FY <- renderPlotly({
       
-      temp_df <- grants %>%  mutate(activation_FY= as.character(ifelse(is.na(activation_FY),
-                                                          "PEND",
-                                                          activation_FY))) %>% 
+      temp_df <-grants %>%
+        mutate(activation_FY = as.character(ifelse(
+          is.na(activation_FY),
+          "PEND",
+          paste0("FY", stri_sub(activation_FY, 3, 4))
+        ))) %>%
         group_by(activation_FY) %>%
-        summarise(n_grants = n(),
-                  remaining_balance = round(sum(`Remaining Available Balance`)),
-                  total_award_amount= sum(`Grant Amount USD`)) %>% 
+        summarise(
+          n_grants = n(),
+          remaining_balance = round(sum(`Remaining Available Balance`)),
+          total_award_amount = sum(`Grant Amount USD`)
+        ) %>%
         dplyr::arrange(desc(activation_FY))
       
       total <- sum(temp_df$total_award_amount)
@@ -365,7 +376,7 @@ server <- shinyServer(function(input,output,session) {
         pad = 4
       )
       
-      colors <- c('rgb(17,71,250)','rgb(192,207,255)')
+      #colors <- c('rgb(17,71,250)','rgb(192,207,255)')
       
       plot_ly(textposition="outside",type = "pie",
               title="Grants \n by Activation FY",
@@ -377,7 +388,7 @@ server <- shinyServer(function(input,output,session) {
                               y = c(0.15, 1)),
                 name = paste0("Active","\n", "Grants"),
                 textinfo="value",
-                marker = list(colors=colors),
+               # marker = list(colors=colors),
                 hole = 0.70,rotation=90) %>% 
         layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
@@ -2481,6 +2492,20 @@ server <- shinyServer(function(input,output,session) {
       })
       
       
+      output$grants_active_this_FY <- renderValueBox({
+        
+        temp_df <- reactive_df()
+        temp_df %>%
+          filter(activation_FY==current_FY) %>%
+          nrow() %>%
+          valueBox(value=.,
+                   subtitle = show_grant_button(paste0("Grants Activated in FY",stri_sub(current_FY,3,4)," "),
+                                                "show_grants_active_this_FY"),
+                   color="blue")
+        
+      })
+    
+      
 
      output$very_high_risk <- renderValueBox({
 
@@ -2771,10 +2796,62 @@ server <- shinyServer(function(input,output,session) {
       showModal(modalDialog(size = 'l',
                             title = "Closed Grants (In Grace Period)",
                             renderTable(data),
-                            easyClose = TRUE,footer = downloadBttn('dload_VHR')))
+                            easyClose = TRUE,footer = downloadBttn('dload_CG')))
       
       
     })
+    
+    
+    output$dload_CG <- downloadHandler(
+      filename = "Closed Grants_Grace_Period.xlsx",
+      content = function(file) {
+        write.xlsx(reactive_data$download_table,file)
+      }) 
+    
+    
+    observeEvent(input$show_grants_active_this_FY, {
+      data <- reactive_df()
+      isolate(data <- data %>% filter(activation_FY == current_FY) %>%
+                select(Fund,
+                       `Fund Name`,
+                       `Fund TTL Name`,
+                       `Activation Date`,
+                       `Months to Closing Date`,
+                       `Grant Amount USD`,
+                       `Disbursements USD`,
+                       `Commitments USD`,
+                       unnacounted_amount,
+                       GPURL_binary) %>%
+                rename("Available Balance (Uncommitted)"=unnacounted_amount,
+                       "PO Commitments"=`Commitments USD`) %>% 
+                arrange(`Activation Date`) 
+      )
+      
+      
+      reactive_data$download_table <- data 
+      
+      data <- data %>%
+        mutate(`Available Balance (Uncommitted)` = dollar(`Available Balance (Uncommitted)`),
+               `Grant Amount USD` = dollar(`Grant Amount USD`),
+               `Disbursements USD` = dollar(`Disbursements USD`),
+               `Months to Closing Date`= as.character(`Months to Closing Date`),
+               `PO Commitments`= dollar(`PO Commitments`),
+               `Activation Date`=as.character(lubridate::as_date(`Activation Date`)))
+      
+      showModal(modalDialog(size = 'l',
+                            title = "Grants activated in current FY",
+                            renderTable(data),
+                            easyClose = TRUE,footer = downloadBttn('dload_CFY')))
+      
+      
+    })
+    
+    output$dload_CFY <- downloadHandler(
+      filename = "Grants_activated_current_FY.xlsx",
+      content = function(file) {
+        write.xlsx(reactive_data$download_table,file)
+      }) 
+    
     
     output$dload_FP <- downloadHandler(
       filename = "closed_grace_period_grants.xlsx",
@@ -4396,7 +4473,8 @@ server <- shinyServer(function(input,output,session) {
                                df.8 <-
                                  pt.8$asDataFrame() %>% t() %>% as.data.frame()
                                
-                               
+                               df.8$Summary <- row.names(df.8)
+                               df.8 <- df.8 %>% select(Summary,GPURL,`Non-GPURL`, Total)
                                
                                #SUBSET OF SUBSET OF USER SELECTED DATA
                                
@@ -4406,7 +4484,7 @@ server <- shinyServer(function(input,output,session) {
                                    `Region Name` %in% input$pivot_region,
                                    `Trustee Fund Name` %in% input$pivot_trustee,
                                    `Execution Type` %in% input$pivot_exec_type,
-                                   GPURL_binary %in% input$pivot_GPURL_binary,
+                                  # GPURL_binary %in% input$pivot_GPURL_binary,
                                    `Lead GP/Global Theme` %in% input$pivot_GP
                                  )
                                
@@ -4548,7 +4626,7 @@ server <- shinyServer(function(input,output,session) {
                                
                                start.1 <- 15
                                end.1 <-
-                                 start.1 + (nrow(pt.1$asDataFrame())) + 1
+                                 start.1 + (nrow(pt.3$asDataFrame())) + 1
                                
                                start.2 <- end.1 + 6
                                end.2 <-
@@ -4556,11 +4634,20 @@ server <- shinyServer(function(input,output,session) {
                                
                                start.3 <- end.2 + 6
                                end.3 <-
-                                 start.3 + (nrow(pt.3$asDataFrame())) + 1
+                                 start.3 + (nrow(pt.1$asDataFrame())) + 1
                                
                                left.1 <- 3
-                               
                                left.2 <- 8
+                               
+                               
+                               #SUMMARY TABLE 
+                               writeData(wb,"Summary",
+                                         paste0("Summary of Entire Active GFDRR Portfolio as of ",
+                                                date_data_udpated,
+                                                " (For reference)"),
+                                         startCol = 3,3)
+                               
+                              
                                writeDataTable(
                                  wb,
                                  sheet = "Summary",
@@ -4568,9 +4655,20 @@ server <- shinyServer(function(input,output,session) {
                                  startCol = left.1,
                                  startRow = 4,
                                  withFilter = FALSE,
-                                 rowNames = TRUE,
+                                 rowNames = FALSE,
                                  tableName = 'test'
                                )
+                               
+                              
+                               
+                               
+                               #RISK SUMMARY TABLE (TOP-RIGHT)
+                               
+                               writeData(wb,"Summary",
+                                         paste0("Summary of select GFDRR Portfolio as of ",
+                                                date_data_udpated,
+                                                " (by Disbursement Risk Level)"),
+                                         startCol = 8,3)
                                
                                pt.risksummary$writeToExcelWorksheet(
                                  wb = wb,
@@ -4581,15 +4679,29 @@ server <- shinyServer(function(input,output,session) {
                                  outputValuesAs = "ACCOUNTING",
                                )
                                
+                               
+                               
+                               writeData(wb,"Summary",
+                                         paste0("Summary of select GFDRR Portfolio as of ",
+                                                date_data_udpated,
+                                                " (by Country/Region)"),
+                                         startCol = left.1 - 1,
+                                         startRow = start.3 - 1)
                                pt.1$writeToExcelWorksheet(
                                  wb = wb,
                                  wsName = "Summary",
-                                 topRowNumber = start.1,
+                                 topRowNumber = start.3,
                                  leftMostColumnNumber = left.1 - 1,
                                  applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
                                
+                               writeData(wb,"Summary",
+                                         paste0("Summary of select GFDRR Portfolio as of ",
+                                                date_data_udpated,
+                                                " (by Trustee)"),
+                                         startCol = left.1,
+                                         startRow = start.2 - 1)
                                pt.2$writeToExcelWorksheet(
                                  wb = wb,
                                  wsName = "Summary",
@@ -4598,23 +4710,42 @@ server <- shinyServer(function(input,output,session) {
                                  applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
+                               writeData(wb,"Summary",
+                                         paste0("Summary of select GFDRR Portfolio as of ",
+                                                date_data_udpated,
+                                                " (by Lead GP/Global Theme)"),
+                                         startCol = left.1,
+                                         startRow = start.1 - 1)
                                
                                pt.3$writeToExcelWorksheet(
                                  wb = wb,
                                  wsName = "Summary",
-                                 topRowNumber = start.3,
+                                 topRowNumber = start.1,
                                  leftMostColumnNumber = left.1,
                                  applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
+                               writeData(wb,"Summary",
+                                         paste0("Summary of select GFDRR Portfolio as of ",
+                                                date_data_udpated,
+                                                " (by Country/Region and Disbursement Risk Level)"),
+                                         startCol = left.2,
+                                         startRow = start.3 - 1)
+                               
                                pt.4$writeToExcelWorksheet(
                                  wb = wb,
                                  wsName = "Summary",
-                                 topRowNumber = start.1,
+                                 topRowNumber = start.3,
                                  leftMostColumnNumber = left.2,
                                  applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
+                               writeData(wb,"Summary",
+                                         paste0("Summary of select GFDRR Portfolio as of ",
+                                                date_data_udpated,
+                                                " (by Trustee and Disbursement Risk Level)"),
+                                         startCol = left.2+1,
+                                         startRow = start.2 - 1)
                                
                                pt.5$writeToExcelWorksheet(
                                  wb = wb,
@@ -4624,11 +4755,17 @@ server <- shinyServer(function(input,output,session) {
                                  applyStyles = TRUE,showRowGroupHeaders = T
                                )
                                
+                               writeData(wb,"Summary",
+                                         paste0("Summary of select GFDRR Portfolio as of ",
+                                                date_data_udpated,
+                                                " (by Lead GP/Global Theme and Disbursement Risk Level)"),
+                                         startCol = left.2+1,
+                                         startRow = start.1 - 1)
                                
                                pt.6$writeToExcelWorksheet(
                                  wb = wb,
                                  wsName = "Summary",
-                                 topRowNumber = start.3,
+                                 topRowNumber = start.1,
                                  leftMostColumnNumber = left.2 + 1,
                                  applyStyles = TRUE,showRowGroupHeaders = T
                                )
@@ -4944,6 +5081,8 @@ server <- shinyServer(function(input,output,session) {
                                addStyle(wb,2,date_format,rows=2:(nrow(excel_df)+2),cols = 17)
                                addStyle(wb,2,date_format,rows=2:(nrow(excel_df)+2),cols = 18)
                                setColWidths(wb, 2, cols = 17:18, widths = 15)
+                               setColWidths(wb, 1, 8, widths = 15)
+                               setColWidths(wb, 1, 9, widths = 45)
                                
                               message("coloring this for you kind sir")
                                
@@ -5006,9 +5145,9 @@ server <- shinyServer(function(input,output,session) {
             })
         
         
+        output$test <- renderPrint(input$pivot_fund_status)
         
-        
-        waiter_hide() # hide the waiter
+        #waiter_hide() # hide the waiter
         
         
 }) #END OF ALL CODE (SERVER FUNCTION)
