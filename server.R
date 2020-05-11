@@ -312,10 +312,10 @@ server <- shinyServer(function(input,output,session) {
       total <- sum(temp_df$total_award_amount)
       
       m <- list(
-        l = 15,
+        l = 10,
         r = 2,
         b = 10,
-        t = 20,
+        t = 10,
         pad = 4
       )
       
@@ -326,8 +326,8 @@ server <- shinyServer(function(input,output,session) {
           data = temp_df,
                 labels=~PMA,
                 values = ~n_grants,
-                domain = list(x = c(0, 0.47),
-                              y = c(0.1, 1)),
+                domain = list(x = c(0, 0.5),
+                              y = c(0.1, 1.1)),
                             name = paste0("Active","\n", "Grants"),
                 textinfo="value",
                             marker = list(colors=colors),
@@ -341,8 +341,8 @@ server <- shinyServer(function(input,output,session) {
                 textinfo = 'text',
                 hole = 0.75,
                 name = paste0("Available","\n","Balance"),
-                domain = list(x = c(0.49, .96),
-                              y = c(0.1, 1))) %>%
+                domain = list(x = c(0.52, 1.2),
+                              y = c(0.1, 1.1))) %>%
         layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                margin=m)

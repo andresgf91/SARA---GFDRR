@@ -617,7 +617,7 @@ tab.reports <- tabItem(
   h1("Download Reports/Data"),
   panel(textOutput("caption.5")),
   fluidRow(
-    column(width=2,
+    column(width=3,
            selectInput(inputId = "report_type",label=NULL,
                        choices= c("Summary Report",
                                   "Disbursement Risk Report",
@@ -809,7 +809,7 @@ font-style: italic;
 
 }
 
- #report_description {font-size:20px;
+ #report_description {font-size:18px;
                display:block; }
 
   '))),
