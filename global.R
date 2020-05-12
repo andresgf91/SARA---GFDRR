@@ -6,26 +6,76 @@ library(lubridate)
 library(pivottabler)
 library(stringr)
 library(googlesheets4)
+library(googledrive)
 
 options(scipen = 999)
 # READ IN DATA ------------------------------------------------------------
 
 #NEEDS UPDATING
 
-#grants_file <- "GFDRR Grant Level Dashboard Data 1_27_2020.xlsx"
-#old_grants_file <- "data/GFDRR Grant Level Raw Data Sara 2_13_20.xlsx"
-#old_trustee_file <- "data/GFDRR Trustee Level Raw Data Sara 2_13_2020.xlsx"
+drive_auth(use_oob = TRUE,
+           path="sara-gfdrr-71de4c83b517.json")
+
+SAP_folder_link <- "https://drive.google.com/open?id=16sUqxA8FzTS5U0LQTXSGEIMF9Ejo8niw"
+
+#get list of folders (dates SAP updated) by 
+docs_df <- drive_ls(SAP_folder_link)[,1:2] %>%
+  as.data.frame()
 
 
-old_grants_file <- "data/GFDRR Grant Level Sara Data 3_4_2020.xlsx"
-old_trustee_file <- "data/GFDRR Trustee Level Sara Data 3_4_2020.xlsx"
+docs_df$date <- docs_df$name %>% mdy()
 
-grants_file <- "data/GFDRR Sara Grant Level Data 4_27_20.xlsx"
-trustee_file <- "data/GFDRR Sara Trustee Level Data 4_27_20.xlsx"
+docs_df <- docs_df %>%
+  dplyr::arrange(desc(date))
+
+latest_files_df <-  drive_ls(as_id(docs_df$id[1])) %>%
+  select(name,id)
+
+previous_files_df <-  drive_ls(as_id(docs_df$id[3])) %>%
+  select(name,id)
+
+grant_id <- which(stri_detect_fixed(tolower(latest_files_df$name),pattern = "grant")) %>%
+  latest_files_df$id[.] %>% as_id()
+
+trustee_id <- which(stri_detect_fixed(tolower(latest_files_df$name),pattern = "trustee")) %>%
+  latest_files_df$id[.] %>% as_id()
+
+previous_grant_id <- which(stri_detect_fixed(tolower(previous_files_df$name),pattern = "grant")) %>%
+  latest_files_df$id[.] %>% as_id()
+
+previous_trustee_id <- which(stri_detect_fixed(tolower(previous_files_df$name),pattern = "trustee")) %>%
+  latest_files_df$id[.] %>% as_id()
+
+
+drive_download(file = grant_id,
+               path="data/latest_grant_data.xlsx",
+               overwrite = TRUE)
+
+
+drive_download(file = trustee_id,
+               path="data/latest_trustee_data.xlsx",
+               overwrite = TRUE)
+
+
+drive_download(file = previous_grant_id,
+               path="data/previous_grant_data.xlsx",
+               overwrite = TRUE)
+
+
+drive_download(file = previous_trustee_id,
+               path="data/previous_trustee_data.xlsx",
+               overwrite = TRUE)
+
+old_grants_file <- "data/previous_grant_data.xlsx"
+old_trustee_file <- "data/previous_trustee_data.xlsx"
+
+grants_file <- "data/latest_grant_data.xlsx"
+trustee_file <- "data/latest_trustee_data.xlsx"
+
+#grants_file <- "data/GFDRR_test Sara Grant Level Data 4_27_20.xlsx"
 
 JAIME_preprocess <- FALSE
 
-#fp_raw_data <- read_xlsx(path = "data/GFDRR Raw Data 2_13_2020.xlsx",sheet = 2,skip = 6)
 fp_raw_data <- read_xlsx(path = "data/FP_GFDRR Raw Data 3_4_2020.xlsx",sheet = 2,skip = 6)
 recode_trustee <- read_xlsx('data/recodes.xlsx',sheet=1)
 recode_region <- read_xlsx('data/recodes.xlsx',sheet=2)
@@ -65,13 +115,17 @@ all_fun <- function(INPUT,CHOICES){
 
 #Data processing -----
 
-process_data_files <- function(GRANTS_file = grants_file,TRUSTEE_file = trustee_file) {
+process_data_files <- function(GRANTS_file = grants_file,TRUSTEE_file = trustee_file,date_pos =1) {
+  
+  print(GRANTS_file)
 
 grants <- read_xlsx(GRANTS_file)
 trustee <- read_xlsx(TRUSTEE_file)
 
 
-date_data_udpated <- lubridate::mdy(stri_sub(GRANTS_file,from = -15,-6))
+
+#date_data_udpated <- lubridate::mdy(stri_sub(GRANTS_file,from = -15,-6))
+date_data_udpated <- docs_df$date[date_pos]
 
 report_data_date <- paste0(
   month(date_data_udpated, abbr = FALSE, label = TRUE),
@@ -359,6 +413,7 @@ return(risk_level)
 
 grants$disbursement_risk_level <- compute_risk_level(grants$required_disbursement_rate)
 
+grants$disbursement_risk_level[is.na(grants$disbursement_risk_level)] <- "Low Risk"
 
 compute_risk_color<- function (x){
   

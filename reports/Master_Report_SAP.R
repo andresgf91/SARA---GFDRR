@@ -13,7 +13,7 @@ current_trustee_subset <- active_trustee %>%
 
 as.of.date <- date_data_udpated
 
-old_processed_data <- process_data_files(GRANTS_file = old_grants_file,TRUSTEE_file = old_trustee_file)
+old_processed_data <- process_data_files(GRANTS_file = old_grants_file,TRUSTEE_file = old_trustee_file,date_pos = 3)
 
 old_data <- old_processed_data[['report_grants']] %>% filter(PMA=='no')
 
