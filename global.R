@@ -13,7 +13,7 @@ options(scipen = 999)
 
 #NEEDS UPDATING
 
-drive_auth(use_oob = TRUE,
+drive_auth(use_oob = TRUE,email = "andresgf91@gmail.com",
            path="sara-gfdrr-71de4c83b517.json")
 
 SAP_folder_link <- "https://drive.google.com/open?id=16sUqxA8FzTS5U0LQTXSGEIMF9Ejo8niw"
@@ -31,7 +31,7 @@ docs_df <- docs_df %>%
 latest_files_df <-  drive_ls(as_id(docs_df$id[1])) %>%
   select(name,id)
 
-previous_files_df <-  drive_ls(as_id(docs_df$id[3])) %>%
+previous_files_df <-  drive_ls(as_id(docs_df$id[2])) %>%
   select(name,id)
 
 grant_id <- which(stri_detect_fixed(tolower(latest_files_df$name),pattern = "grant")) %>%
@@ -41,10 +41,14 @@ trustee_id <- which(stri_detect_fixed(tolower(latest_files_df$name),pattern = "t
   latest_files_df$id[.] %>% as_id()
 
 previous_grant_id <- which(stri_detect_fixed(tolower(previous_files_df$name),pattern = "grant")) %>%
-  latest_files_df$id[.] %>% as_id()
+  previous_files_df$id[.] %>% as_id()
 
-previous_trustee_id <- which(stri_detect_fixed(tolower(previous_files_df$name),pattern = "trustee")) %>%
-  latest_files_df$id[.] %>% as_id()
+previous_trustee_id <- which(
+  stri_detect_fixed(
+  tolower(previous_files_df$name),pattern = "trustee")
+  ) %>%
+  previous_files_df$id[.] %>%
+  as_id()
 
 
 drive_download(file = grant_id,
@@ -214,6 +218,13 @@ if (!("Fund Managing Unit Name" %in% grant_names)){
 
 }
 
+if (("Window Number" %in% grant_names)){
+  
+  grants <-grants %>% rename("Window #"=`Window Number`)
+  
+}
+
+
 if (!("Child Fund Managing Unit" %in% grant_names)){
   
   grants$`Child Fund Managing Unit` <- 
@@ -244,6 +255,7 @@ if ("Contribution Agreement Signed (Ledger) U...21" %in% trustee_names){
   trustee <- trustee %>%
     dplyr::rename("Net Unpaid contribution in USD"=`Contribution Agreement Signed (Ledger) U...21`)
 }
+
 
 
 grants <- grants %>% filter(!(Fund %in% swedish_grants_to_remove))
@@ -507,7 +519,7 @@ report_grants <- grants %>%
     "Cumulative Disbursements" = `Disbursements USD`,
     "PO Commitments" = `Commitments USD`,
     "Execution Type" = `DF Execution Type`,
-    "Window #" = `Window Number`,
+    #"Window #" = `Window Number`,
     "Trustee #" = Trustee,
     "Lead GP/Global Theme" = `Lead GP/Global Themes`,
     "2020 Disbursements" = `2020 Disbursement USD`,

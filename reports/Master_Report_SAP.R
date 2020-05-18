@@ -13,7 +13,11 @@ current_trustee_subset <- active_trustee %>%
 
 as.of.date <- date_data_udpated
 
-old_processed_data <- process_data_files(GRANTS_file = old_grants_file,TRUSTEE_file = old_trustee_file,date_pos = 3)
+old_processed_data <- process_data_files(
+  GRANTS_file = old_grants_file,
+  TRUSTEE_file = old_trustee_file,
+  date_pos = 2
+  )
 
 old_data <- old_processed_data[['report_grants']] %>% filter(PMA=='no')
 
@@ -111,7 +115,8 @@ sum_df_all <- df %>%
 #Changeeeeee
 sum_df_all$by_8_2020 <- df %>%
   filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name) %>%
-  select(`Uncommitted Balance`) %>%
+  select(`Uncommitted Balance`) %>% 
+  add_row(`Uncommitted Balance`=0) %>% 
   sum()
 
 sum_df_GPURL <- df %>%
@@ -121,21 +126,25 @@ sum_df_GPURL <- df %>%
             "Available Balance (Uncommitted)" = sum(`Uncommitted Balance`))%>%
   mutate("percent"= `Available Balance (Uncommitted)`/`$ Amount`)
 
-sum_df_GPURL$by_8_2020 <- df %>% filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name,
-                                        GPURL_binary=="GPURL") %>%
-  select(`Uncommitted Balance`) %>% sum()
+sum_df_GPURL$by_8_2020 <- df %>%
+  filter(`Trustee Fund Name` %in%
+           current_trustee_subset$temp.name,
+         GPURL_binary=="GPURL") %>%
+  select(`Uncommitted Balance`) %>%
+  add_row(`Uncommitted Balance`=0) %>%  sum()
 
 sum_df_non_GPURL <- df %>%
   filter(GPURL_binary=="Non-GPURL") %>% 
   summarise("# Grants" = n(),
             "$ Amount" = sum(`Grant Amount`),
-            "Available Balance (Uncommitted)" = sum(`Uncommitted Balance`))%>%
+            "Available Balance (Uncommitted)" = sum(`Uncommitted Balance`)) %>%
   mutate("percent"= `Available Balance (Uncommitted)`/`$ Amount`) 
 
 sum_df_non_GPURL$by_8_2020 <- df %>%
   filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name,
          GPURL_binary=="Non-GPURL") %>%
-  select(`Uncommitted Balance`) %>% sum()
+  select(`Uncommitted Balance`) %>%
+  add_row(`Uncommitted Balance`=0) %>% sum()
 
 
 sum_display_df <- data.frame("Summary" = c("Grant Count",
@@ -620,11 +629,15 @@ sum_df_all <- temp_df %>%
 
 sum_df_all$uncommitted_8020 <- temp_df %>%
   filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name) %>% 
-  select(`Uncommitted Balance`) %>% sum()
+  select(`Uncommitted Balance`) %>%
+  add_row(`Uncommitted Balance`= 0) %>% #add a row in case the df is empty
+  sum()
 
 sum_df_all$PO_8020 <- temp_df %>%
   filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name) %>% 
-  select(`PO Commitments`) %>% sum()
+  select(`PO Commitments`) %>%
+  add_row(`PO Commitments`= 0) %>% 
+  sum()
 
 
 sum_df_GPURL <-  temp_df %>%
@@ -637,12 +650,16 @@ sum_df_GPURL <-  temp_df %>%
 sum_df_GPURL$uncommitted_8020 <- temp_df %>%
   filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name,
          GPURL_binary=="GPURL") %>% 
-  select(`Uncommitted Balance`) %>% sum()
+  select(`Uncommitted Balance`) %>%
+  add_row(`Uncommitted Balance`= 0) %>%
+  sum()
 
 sum_df_GPURL$PO_8020 <- temp_df %>%
   filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name,
          GPURL_binary=="GPURL") %>% 
-  select(`PO Commitments`) %>% sum()
+  select(`PO Commitments`) %>%
+  add_row(`PO Commitments`= 0) %>% 
+  sum()
 
 
 sum_df_non_GPURL <- temp_df %>%
@@ -652,15 +669,21 @@ sum_df_non_GPURL <- temp_df %>%
             "Available Balance (Uncommitted)" = sum(`Uncommitted Balance`))%>%
   mutate("percent"= `Available Balance (Uncommitted)`/`$ Amount`) 
 
-sum_df_non_GPURL$uncommitted_8020 <- temp_df %>%
+sum_df_non_GPURL$uncommitted_8020 <- 
+  temp_df %>%
   filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name,
          GPURL_binary=="Non-GPURL") %>% 
-  select(`Uncommitted Balance`) %>% sum()
+  select(`Uncommitted Balance`) %>%
+  add_row(`Uncommitted Balance`= 0) %>% 
+  sum()
+
 
 sum_df_non_GPURL$PO_8020 <- temp_df %>%
   filter(`Trustee Fund Name` %in% current_trustee_subset$temp.name,
          GPURL_binary=="Non-GPURL") %>% 
-  select(`PO Commitments`) %>% sum()
+  select(`PO Commitments`) %>% 
+  add_row(`PO Commitments`= 0) %>% 
+  sum()
 
 
 sum_display_df <- data.frame("Summary"= c("Grant Count",
