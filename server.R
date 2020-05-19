@@ -369,7 +369,7 @@ server <- shinyServer(function(input,output,session) {
       total <- sum(temp_df$total_award_amount)
       
       m <- list(
-        l = 5,
+        l = 10,
         r = 2,
         b = 10,
         t = 20,
@@ -384,7 +384,7 @@ server <- shinyServer(function(input,output,session) {
                 labels=~activation_FY,
                 values = ~n_grants,
               sort=FALSE,
-                domain = list(x = c(0, 0.95),
+                domain = list(x = c(0.1, 0.95),
                               y = c(0.15, 1)),
                 name = paste0("Active","\n", "Grants"),
                 textinfo="value",
