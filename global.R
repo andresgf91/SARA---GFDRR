@@ -80,7 +80,7 @@ trustee_file <- "data/latest_trustee_data.xlsx"
 
 JAIME_preprocess <- FALSE
 
-fp_raw_data <- read_xlsx(path = "data/FP_GFDRR Raw Data 3_4_2020.xlsx",sheet = 2,skip = 6)
+#fp_raw_data <- read_xlsx(path = "data/FP_GFDRR Raw Data 3_4_2020.xlsx",sheet = 2,skip = 6)
 recode_trustee <- read_xlsx('data/recodes.xlsx',sheet=1)
 recode_region <- read_xlsx('data/recodes.xlsx',sheet=2)
 recode_GT <- read_xlsx("data/Global Theme - Resp. Unit Mapping.xlsx")
