@@ -154,7 +154,6 @@ tab.1 <-  tabItem(tabName = "overview",
                                 closable = F,
                                 collapsed = F,
                           enable_dropdown = F),
-                       # tippy_this("myid", "Tooltip",placement='right'),
                         boxPlus(
                           plotlyOutput("funding_GP", height = "260px"),
                                 title='Funding by Global Practice',
@@ -239,20 +238,7 @@ tab.1.3 <-  tabItem(tabName = "admin_info",
                           "Donor Contributions",
                           tableOutput("donor_contributions"),
                           plotlyOutput("donor_contributions_GG")
-                        )#,
-                        #tabPanel(
-                         # title = "RETF grants overview",
-                          #fluidRow(
-                           # valueBoxOutput("RETF_n_grants_A"),
-                            #valueBoxOutput("RETF_$_grants_A")
-                          #),
-                          #fluidPage(tabsetPanel(
-                           # tabPanel(title = "Trustees",
-                            #         plotlyOutput("RETF_trustees_A_pie", height = 450)),
-                            #tabPanel(title = "Regions",
-                             #        plotlyOutput("RETF_region_A_pie",height = 450))
-                         # ))
-                       # )
+                        )
                       )
                     )
 
@@ -375,11 +361,6 @@ tab.2 <- tabItem(tabName = "parent_tf",
                    ))
                    )
                  ))
-
-
-                      #valueBoxOutput("trustee_received",width = NULL),
-                             # valueBoxOutput("trustee_unpaid",width = NULL)),
-  
 
 
 ## tab.3 (Grant Portfolio View) ---------------
@@ -623,7 +604,8 @@ tab.reports <- tabItem(
                                   "Disbursement Risk Report",
                                   "Pivot Table Report",
                                   "Combined Report (Master)",
-                                  "SAP Data (Source Data)"),
+                                  "SAP Data (Source Data)",
+                                  "M&E Platform Data"),
                        selectize=TRUE),
            panel(heading = "Report Description",textOutput("report_description"))),
     column(width=5,
@@ -703,18 +685,7 @@ tab.reports <- tabItem(
                                           individual = T,
                                           width='100%',
                                           checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
-                    # selectInput(inputId = "pivot_region",width = '100%',
-                    #             label="Region Name(s):",
-                    #             choices= sort(unique(grants$Region)),
-                    #             multiple = T,
-                    #             selectize = T,
-                    #             selected =  sort(unique(grants$Region))),
-                    # selectInput(inputId = "pivot_trustee",width = '100%',
-                    #             label="Trustee(s):",
-                    #             choices= sort(unique(grants$temp.name)),
-                    #             multiple = T,
-                    #             selectize = T,
-                    #             selected =  sort(unique(grants$temp.name))),
+
                     checkboxGroupButtons( 'pivot_trustee',
                                           "Selected Trustees (Parent Funds):",
                                           choices = sort(unique(grants$temp.name)),
@@ -725,12 +696,7 @@ tab.reports <- tabItem(
                                           individual = T,
                                           width='100%',
                                           checkIcon = list(yes = icon("ok", lib = "glyphicon"))),
-                    # selectInput(inputId = "pivot_exec_type",width = '100%',
-                    #             label="Execution Type:",
-                    #             choices= sort(unique(grants$`DF Execution Type`)),
-                    #             multiple = T,
-                    #             selectize = T,
-                    #             selected =  sort(unique(grants$`DF Execution Type`))),
+
                     checkboxGroupButtons( 'pivot_exec_type',
                                           "Selected execution types:",
                                           choices = sort(unique(grants$`DF Execution Type`)),
@@ -779,6 +745,9 @@ tab.reports <- tabItem(
                                     label = 'Download Report')),
     conditionalPanel(condition = "input.report_type == 'SAP Data (Source Data)'",
                      downloadButton("Download_source_data.xlsx",
+                                    label = 'Download Data')),
+    conditionalPanel(condition = "input.report_type == 'M&E Platform Data'",
+                     downloadButton("ME_Platform_Data.csv",
                                     label = 'Download Data'))
   )
 )

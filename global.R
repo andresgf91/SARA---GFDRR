@@ -18,6 +18,8 @@ drive_auth(use_oob = TRUE,email = "andresgf91@gmail.com",
 
 SAP_folder_link <- "https://drive.google.com/open?id=16sUqxA8FzTS5U0LQTXSGEIMF9Ejo8niw"
 
+meplatform_data_link <- "https://radweb.worldbank.org/GFDRRReport/api/Report/ExportExcel?Region=null&FundStatus=null&Cycle=null&WindowNumber=null"
+
 #get list of folders (dates SAP updated) by 
 docs_df <- drive_ls(SAP_folder_link)[,1:2] %>%
   as.data.frame()
@@ -550,7 +552,6 @@ report_grants$`Disbursement Risk Level` <- factor(report_grants$`Disbursement Ri
 #report_grants <- report_grants %>% filter(`Child Fund #`!="TF0B2168")
 
 grants <- grants %>% filter(`Grant Amount USD` > 0)
-
 
 
 

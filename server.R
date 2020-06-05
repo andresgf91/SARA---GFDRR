@@ -465,6 +465,30 @@ server <- shinyServer(function(input,output,session) {
         write.xlsx(reactive_data$download_table,file,asTable = T)
       }) 
     
+    output$ME_Platform_Data.csv <- downloadHandler(
+      filename = "Processed_M&E Platform Data.csv",
+      content = function(file) {
+        withProgress(message='Retrieving data from GFDRR M&E platform,
+                         this may take a few minutes...',{
+        require(httr)
+        require(readxl)
+        
+        GET(meplatform_data_link,write_disk(tf <- tempfile(fileext = ".xlsx")))
+        
+        website_data <- readxl::read_xlsx(tf)
+        
+        for(i in 1:nrow(website_data)){
+          
+          if (website_data$Trustee[i] %in% recode_trustee$Trustee){
+          
+          website_data$`Funding Source`[i] <-
+            recode_trustee$`Trustee Fund Name`[recode_trustee$Trustee==website_data$Trustee[i]]}
+        }
+        
+        
+        write.csv(website_data,file,na="",row.names = FALSE)},value = .99)
+      }) 
+    
     
     shinyjs::addClass(id = "overview", class = "navbar-right")
     
