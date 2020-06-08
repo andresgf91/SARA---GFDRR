@@ -85,7 +85,7 @@ JAIME_preprocess <- FALSE
 #fp_raw_data <- read_xlsx(path = "data/FP_GFDRR Raw Data 3_4_2020.xlsx",sheet = 2,skip = 6)
 recode_trustee <- read_xlsx('data/recodes.xlsx',sheet=1)
 recode_region <- read_xlsx('data/recodes.xlsx',sheet=2)
-recode_GT <- read_xlsx("data/Global Theme - Resp. Unit Mapping.xlsx")
+recode_GT_VPU <- read_xlsx("data/Global Theme - Resp. Unit Mapping.xlsx")
 
 
 # glossary <- read_sheet("https://docs.google.com/spreadsheets/d/1S9Rpd4iIvrTvgyvCXYcRG_7BaFV82mPYo_557yVfSO4/edit?usp=sharing",sheet = 1)
@@ -123,7 +123,7 @@ all_fun <- function(INPUT,CHOICES){
 
 process_data_files <- function(GRANTS_file = grants_file,TRUSTEE_file = trustee_file,date_pos =1) {
   
-  print(GRANTS_file)
+  #print(GRANTS_file)
 
 grants <- read_xlsx(GRANTS_file)
 trustee <- read_xlsx(TRUSTEE_file)
@@ -158,6 +158,26 @@ if ("Lead GP/Global Theme" %in% grant_names){
   grants <- grants %>% dplyr::rename("Lead GP/Global Themes"=`Lead GP/Global Theme`)
   message("Changed col name LEAD GP/Global Theme")
 }
+
+grant_names <- names(grants)
+
+if(!("Lead GP/Global Themes" %in% grant_names)){
+  grants <- left_join(grants,{recode_GT_VPU %>%
+      select(`Resp. Unit`,`Lead GP/Global Themes`)
+    },by=c("Fund Managing Unit Name"="Resp. Unit")
+    ) %>% dplyr::distinct()
+  message("I have mapped grants to their respective GP/GT for you kind SIR")
+}
+
+if(!("VPU" %in% grant_names)){
+  grants <- left_join(grants,{recode_GT_VPU %>%
+      select(`Resp. Unit`,VPU)
+  },by=c("Fund Managing Unit Name"="Resp. Unit")
+  ) %>% dplyr::distinct()
+  
+  message("I have mapped grants to their respective VPU for you kind SIR")
+}
+
 
 if ("Child Fund" %in% grant_names){
   grants <- grants %>% dplyr::rename("Fund"=`Child Fund`)
@@ -214,11 +234,6 @@ if ("Transfers-out" %in% grant_names){
   message("ADDED col Transfers-out in USD")
 }
 
-if (!("Fund Managing Unit Name" %in% grant_names)){
-  
-  grants$`Fund Managing Unit Name` <- grants$`TTL Unit Name`
-
-}
 
 if (("Window Number" %in% grant_names)){
   
@@ -229,17 +244,16 @@ if (("Window Number" %in% grant_names)){
 
 if (!("Child Fund Managing Unit" %in% grant_names)){
   
-  grants$`Child Fund Managing Unit` <- 
-    ifelse("Child Fund Managing Unit Name" %in% grant_names,
-           grants$`Child Fund Managing Unit Name`,
-           ifelse("Fund Managing Unit Name" %in% grant_names,
-                  grants$`Fund Managing Unit Name`, 
-           ifelse("TTL Unit Name" %in% grant_names,
-                  grants$`TTL Unit Name`,
-                  "No managing unit in the data")
-           )
-  )
+ grants <- grants %>%  mutate("Child Fund Managing Unit"=`Fund Managing Unit Name`)
 }
+
+
+if (!("Fund Managing Unit Name" %in% grant_names)){
+  
+  grants$`Fund Managing Unit Name` <- grants$`TTL Unit Name`
+  
+}
+
 
 print(names(grants))
 
@@ -265,7 +279,7 @@ grants <- grants %>% filter(!(Fund %in% swedish_grants_to_remove))
 #ADDING LEAD GP/GLOBAL THEMES-----------
 
 # Change name of CLimate Change to Climate Change/GFDRR
-recode_GT$`Lead GP/Global Themes`[which(recode_GT$`Lead GP/Global Themes`=="Climate Change")] <- "Climate Change/GFDRR" 
+recode_GT_VPU$`Lead GP/Global Themes`[which(recode_GT_VPU$`Lead GP/Global Themes`=="Climate Change")] <- "Climate Change/GFDRR" 
 grants$`Lead GP/Global Themes`[which(grants$`Lead GP/Global Themes`=="Climate Change")] <- "Climate Change/GFDRR"
 
 
