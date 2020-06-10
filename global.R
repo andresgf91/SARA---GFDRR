@@ -16,9 +16,14 @@ options(scipen = 999)
 drive_auth(use_oob = TRUE,email = "andresgf91@gmail.com",
            path="sara-gfdrr-71de4c83b517.json")
 
+gs4_auth(use_oob = TRUE,email = "andresgf91@gmail.com",
+             path="sara-gfdrr-71de4c83b517.json")
+
 SAP_folder_link <- "https://drive.google.com/open?id=16sUqxA8FzTS5U0LQTXSGEIMF9Ejo8niw"
 
 meplatform_data_link <- "https://radweb.worldbank.org/GFDRRReport/api/Report/ExportExcel?Region=null&FundStatus=null&Cycle=null&WindowNumber=null"
+
+glossary_link <- drive_link(as_id("10g5SioKkpjSSBL91VYRlDUU0a1-kVOQJ7QtL7BtCwsE"))
 
 #get list of folders (dates SAP updated) by 
 docs_df <- drive_ls(SAP_folder_link)[,1:2] %>%
@@ -92,8 +97,10 @@ recode_GT_VPU <- read_xlsx("data/Global Theme - Resp. Unit Mapping.xlsx")
 # 
 # write.csv(glossary,"data/glossary_1.csv")
 
-gloss_banners <- read_xlsx("data/Glossary_SARA.xlsx",sheet = 'Tab Banners')
-gloss_terms <- read_xlsx("data/Glossary_SARA.xlsx",sheet = 'Terminology') %>% arrange(Term)
+#gloss_banners <- read_xlsx("data/Glossary_SARA.xlsx",sheet = 'Tab Banners')
+#gloss_terms <- read_xlsx("data/Glossary_SARA.xlsx",sheet = 'Terminology') %>% arrange(Term)
+gloss_banners <- read_sheet(glossary_link, sheet = 'Tab Banners')
+gloss_terms <- read_sheet(glossary_link,sheet = 'Terminology') %>% arrange(Term)
 
 
 ##GLOBAL FUNCTIONS ---------
